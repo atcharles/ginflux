@@ -59,6 +59,9 @@ func (d *db) insert(bean interface{}) (err error) {
 	default:
 		panic("gInflux:insert; unSupport insert type")
 	}
-	err = d.client.Write(bps)
+	if err = d.client.Write(bps); err != nil {
+		return
+	}
+	d.client.Release()
 	return
 }

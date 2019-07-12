@@ -47,6 +47,7 @@ func (s *Session) CreateRetentionPolicy(rp RetentionPolicy) error {
 	if err != nil {
 		return err
 	}
+	defer client.Release()
 	_, err = client.Query(qr)
 	return err
 }

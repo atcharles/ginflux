@@ -23,10 +23,12 @@ func (e *Engine) newSession() *Session {
 
 func NewEngine(opts Options) (eg *Engine, err error) {
 	pool := NewOPool(opts)
-	_, err = pool.Acquire()
+	var oc *oClient
+	oc, err = pool.Acquire()
 	if err != nil {
 		return
 	}
+	defer oc.Release()
 	eg = &Engine{pool: pool, session: &Session{}}
 	eg.session.engine = eg
 	return

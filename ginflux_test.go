@@ -71,6 +71,7 @@ func mustGetClient() *oClient {
 	if err != nil {
 		panic(err)
 	}
+	defer client.Release()
 	return client
 }
 

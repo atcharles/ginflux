@@ -40,7 +40,7 @@ func TestNewOPool(t *testing.T) {
 			if err != nil {
 				panic(err)
 			}
-
+			defer oc.Release()
 			a, _, _ := oc.GetInfluxClient().Ping(time.Second)
 			fmt.Printf("网络延时:%s\n", a.String())
 		}()
