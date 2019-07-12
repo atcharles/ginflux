@@ -10,15 +10,23 @@ type (
 )
 
 func (e *Engine) NewDB(name string) (dbInstance *db, err error) {
-	return e.newSession().NewDB(name)
+	sn, er := e.newSession()
+	if er != nil {
+		err = er
+		return
+	}
+	dbInstance = sn.NewDB(name)
+	return
 }
 
-func (e *Engine) NewSession() *Session {
+func (e *Engine) NewSession() (session *Session, err error) {
 	return e.newSession()
 }
 
-func (e *Engine) newSession() *Session {
-	return &Session{engine: e}
+func (e *Engine) newSession() (session *Session, err error) {
+	session = &Session{engine: e}
+	session.client, err = e.Acquire()
+	return
 }
 
 func NewEngine(opts Options) (eg *Engine, err error) {
@@ -39,10 +47,16 @@ func (e *Engine) Acquire() (cl *oClient, err error) {
 }
 
 func (e *Engine) SyncDB(beans ...RetentionPolicy) (err error) {
+	session, er := e.newSession()
+	if er != nil {
+		err = er
+		return
+	}
 	for _, value := range beans {
-		if err = e.newSession().CreateRetentionPolicy(value); err != nil {
+		if err = session.CreateRetentionPolicy(value); err != nil {
 			return
 		}
 	}
+	session.Release()
 	return
 }

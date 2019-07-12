@@ -8,17 +8,20 @@ import (
 
 type Session struct {
 	engine *Engine
+	client *oClient
 }
 
-func (s *Session) NewDB(name string) (dbInstance *db, err error) {
+func (s *Session) NewDB(name string) (dbInstance *db) {
 	dbInstance = &db{name: name}
-	var cl *oClient
-	cl, err = s.engine.Acquire()
-	if err != nil {
-		return
-	}
-	dbInstance.client = cl
+	dbInstance.client = s.client
 	return
+}
+
+func (s *Session) createDB(name string) error {
+	qStr := fmt.Sprintf(`CREATE DATABASE "%s"`, name)
+	qr := ic.NewQuery(qStr, name, "ns")
+	_, err := s.client.Query(qr)
+	return err
 }
 
 func (s *Session) CreateRetentionPolicy(rp RetentionPolicy) error {
@@ -42,12 +45,17 @@ func (s *Session) CreateRetentionPolicy(rp RetentionPolicy) error {
 	if rp.Default {
 		qStr += " DEFAULT"
 	}
+	if err := s.createDB(rp.DBName); err != nil {
+		return err
+	}
 	qr := ic.NewQuery(qStr, rp.DBName, "ns")
-	client, err := s.engine.Acquire()
+	_, err := s.client.Query(qr)
 	if err != nil {
 		return err
 	}
-	defer client.Release()
-	_, err = client.Query(qr)
-	return err
+	return nil
+}
+
+func (s *Session) Release() {
+	s.client.Release()
 }
