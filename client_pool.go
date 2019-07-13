@@ -93,18 +93,14 @@ func (o *oPool) getOrCreateOne() (oc *oClient, err error) {
 	select {
 	case oc = <-o.pool:
 		oc.lock.RLock()
-		if oc.inUsing {
+		if oc.inUsing && o.CurrentOpen() < int64(o.opt.maxOpen) {
 			oc.lock.RUnlock()
 			err = ErrInUsing
 			return
 		}
 		oc.lock.RUnlock()
 	default:
-		if o.CurrentOpen() >= int64(o.opt.maxOpen) {
-			err = ErrMaxOpen
-			return
-		}
-		if oc, err = o.newOClient(o.opt.httpConf); err != nil {
+		if oc, err = o.newOClient(); err != nil {
 			return
 		}
 	}
@@ -118,7 +114,7 @@ func (o *oPool) getOrCreateOne() (oc *oClient, err error) {
 	return
 }
 
-func (o *oPool) newOClient(httpConf ic.HTTPConfig) (oc *oClient, err error) {
+func (o *oPool) newOClient() (oc *oClient, err error) {
 	oc = &oClient{
 		lock:    new(sync.RWMutex),
 		inUsing: true,
@@ -126,9 +122,14 @@ func (o *oPool) newOClient(httpConf ic.HTTPConfig) (oc *oClient, err error) {
 		created: time.Now(),
 		op:      o,
 	}
-	oc.Client, err = ic.NewHTTPClient(httpConf)
-	o.pool <- oc
-	o.Increment(1)
+	oc.Client, err = ic.NewHTTPClient(o.opt.httpConf)
+	select {
+	case o.pool <- oc:
+		o.Increment(1)
+	default:
+		err = ErrMaxOpen
+		return
+	}
 	return
 }
 
@@ -137,12 +138,17 @@ func (o *oClient) GetInfluxClient() ic.Client {
 }
 
 func (o *oClient) Release() {
+	if o == nil {
+		return
+	}
 	o.lock.Lock()
+	defer o.lock.Unlock()
 	if !o.alive {
-		o.lock.Unlock()
+		return
+	}
+	if !o.inUsing {
 		return
 	}
 	o.op.pool <- o
 	o.inUsing = false
-	o.lock.Unlock()
 }

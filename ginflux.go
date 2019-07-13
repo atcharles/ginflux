@@ -9,6 +9,10 @@ type (
 	}
 )
 
+func (e *Engine) DB(name string) *db {
+	return e.Session().NewDB(name)
+}
+
 func (e *Engine) NewDB(name string) (dbInstance *db, err error) {
 	sn, er := e.newSession()
 	if er != nil {
@@ -17,6 +21,10 @@ func (e *Engine) NewDB(name string) (dbInstance *db, err error) {
 	}
 	dbInstance = sn.NewDB(name)
 	return
+}
+
+func (e *Engine) Session() *Session {
+	return &Session{engine: e}
 }
 
 func (e *Engine) NewSession() (session *Session, err error) {
@@ -53,6 +61,9 @@ func (e *Engine) SyncDB(beans ...RetentionPolicy) (err error) {
 		return
 	}
 	for _, value := range beans {
+		if err = session.createDB(value.DBName); err != nil {
+			return
+		}
 		if err = session.CreateRetentionPolicy(value); err != nil {
 			return
 		}

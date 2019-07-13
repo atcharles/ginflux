@@ -1,8 +1,6 @@
 package ginflux
 
 import (
-	"expvar"
-	"fmt"
 	"go/ast"
 	"reflect"
 	"strings"
@@ -76,9 +74,9 @@ type innerPoint struct {
 	tagTime   time.Time
 }
 
-func (ip *innerPoint) parseBeanTags(bean interface{}) {
+func (ip *innerPoint) def() {
 	if ip == nil {
-		return
+		panic("innerPoint: nil")
 	}
 	if ip.tagMap == nil {
 		ip.tagMap = make(MapString)
@@ -86,19 +84,31 @@ func (ip *innerPoint) parseBeanTags(bean interface{}) {
 	if ip.fieldsMap == nil {
 		ip.fieldsMap = make(models.Fields)
 	}
+}
+
+/*func (ip *innerPoint) bindBean(bean interface{}) {
+	ip.def()
+	if reflect.TypeOf(bean).Kind() != reflect.Ptr {
+		panic("bindBean: need ptr")
+	}
+	//v := reflect.Indirect(reflect.ValueOf(bean))
+}*/
+
+func (ip *innerPoint) parseBeanTags(bean interface{}) {
+	ip.def()
 	v := reflect.Indirect(reflect.ValueOf(bean))
 	for i := 0; i < v.NumField(); i++ {
 		field := v.Type().Field(i)
 		if !ast.IsExported(field.Name) {
 			continue
 		}
+		fieldName := LintGonicMapper.Obj2Table(field.Name)
 		tStr := field.Tag.Get(TAGKey)
 		vv := reflect.Indirect(v.Field(i))
 		if (vv.Kind() == reflect.Struct && len(tStr) == 0) || field.Anonymous {
 			ip.parseBeanTags(vv.Interface())
 			continue
 		}
-		fieldName := LintGonicMapper.Obj2Table(field.Name)
 		if len(tStr) == 0 {
 			continue
 		}
@@ -125,6 +135,7 @@ func (ip *innerPoint) parseBeanTags(bean interface{}) {
 		if _, ok := tagMap[FieldJSON]; ok {
 			bts, _ := json.Marshal(v.Field(i).Interface())
 			ip.fieldsMap[fieldName] = BytesToString(bts)
+			continue
 		}
 	}
 	if ip.tagTime.IsZero() {
@@ -145,17 +156,19 @@ func tagMap(tags []string) MapString {
 	return mp
 }
 
-func fieldValue(field interface{}) interface{} {
-	field = reflect.Indirect(reflect.ValueOf(field)).Interface()
+func fieldValue(field interface{}) (rs interface{}) {
 	switch val := field.(type) {
 	case float32, float64, int, int8, int16, int32,
 		int64, uint, uint8, uint16, uint32, uint64, string:
-		return val
+		rs = val
 	case []byte:
-		return BytesToString(val)
-	case expvar.Var:
-		return val.String()
+		rs = BytesToString(val)
+	case Conversion:
+		b, _ := val.ToDB()
+		rs = BytesToString(b)
 	default:
-		return fmt.Sprintf("%v", val)
+		b, _ := json.Marshal(val)
+		rs = BytesToString(b)
 	}
+	return rs
 }

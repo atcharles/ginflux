@@ -11,9 +11,21 @@ type Session struct {
 	client *oClient
 }
 
+func (s *Session) Client() *oClient {
+	return s.client
+}
+
+func (s *Session) SetClient(client *oClient) *Session {
+	s.client = client
+	return s
+}
+
 func (s *Session) NewDB(name string) (dbInstance *db) {
 	dbInstance = &db{name: name}
-	dbInstance.client = s.client
+	if s.client != nil {
+		dbInstance.client = s.client
+	}
+	dbInstance.session = s
 	return
 }
 
@@ -22,6 +34,10 @@ func (s *Session) createDB(name string) error {
 	qr := ic.NewQuery(qStr, name, "ns")
 	_, err := s.client.Query(qr)
 	return err
+}
+
+func (s *Session) CreateDB(name string) error {
+	return s.createDB(name)
 }
 
 func (s *Session) CreateRetentionPolicy(rp RetentionPolicy) error {
@@ -44,9 +60,6 @@ func (s *Session) CreateRetentionPolicy(rp RetentionPolicy) error {
 		rp.ShardDuration)
 	if rp.Default {
 		qStr += " DEFAULT"
-	}
-	if err := s.createDB(rp.DBName); err != nil {
-		return err
 	}
 	qr := ic.NewQuery(qStr, rp.DBName, "ns")
 	_, err := s.client.Query(qr)

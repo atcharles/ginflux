@@ -1,8 +1,7 @@
 package ginflux
 
 import (
-	"expvar"
-	"fmt"
+	"errors"
 	"reflect"
 	"runtime"
 	"strconv"
@@ -123,6 +122,11 @@ func (a argInt) Get(i int, args ...int) (r int) {
 	return
 }
 
+type Conversion interface {
+	FromDB(data []byte) error
+	ToDB() (b []byte, err error)
+}
+
 // Convert any type to string.
 func ToStr(value interface{}, args ...int) (s string) {
 	switch v := value.(type) {
@@ -156,10 +160,56 @@ func ToStr(value interface{}, args ...int) (s string) {
 		s = v
 	case []byte:
 		s = string(v)
-	case expvar.Var:
-		s = v.String()
+	case Conversion:
+		b, _ := v.ToDB()
+		s = string(b)
 	default:
-		s = fmt.Sprintf("%v", v)
+		b, _ := json.Marshal(v)
+		s = BytesToString(b)
 	}
 	return s
+}
+
+type StringVal string
+
+func (s StringVal) Bind(fieldValue *reflect.Value) (err error) {
+	fieldType := fieldValue.Type()
+	if !fieldValue.CanAddr() {
+		return errors.New("StringVal:Bind:fieldValue:cannot take address")
+	}
+	switch fieldType.Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		var i int
+		if i, err = strconv.Atoi(string(s)); err != nil {
+			return
+		}
+		fieldValue.SetInt(int64(i))
+	case reflect.Bool:
+		var b bool
+		if b, err = strconv.ParseBool(string(s)); err != nil {
+			return
+		}
+		fieldValue.SetBool(b)
+	case reflect.Float32, reflect.Float64:
+		var v float64
+		if v, err = strconv.ParseFloat(string(s), 64); err != nil {
+			return
+		}
+		fieldValue.SetFloat(v)
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		var v uint64
+		if v, err = strconv.ParseUint(string(s), 10, 64); err != nil {
+			return
+		}
+		fieldValue.SetUint(v)
+	case reflect.String:
+		fieldValue.SetString(string(s))
+	default:
+		v := fieldValue.Interface()
+		if err = json.Unmarshal(StringToBytes(string(s)), &v); err != nil {
+			return
+		}
+		fieldValue.Set(reflect.ValueOf(v))
+	}
+	return
 }
