@@ -42,12 +42,16 @@ type (
 )
 
 func obj2Time(bean interface{}) time.Time {
+	if bean == nil {
+		return time.Time{}
+	}
 	if tt, ok := bean.(InterfaceTime); ok {
 		return tt.Time()
 	}
+	timeType := reflect.TypeOf(time.Time{})
 	v1 := reflect.Indirect(reflect.ValueOf(bean))
-	if tt, ok := v1.Interface().(time.Time); ok {
-		return tt
+	if v1.Type().ConvertibleTo(timeType) {
+		return v1.Convert(timeType).Interface().(time.Time)
 	}
 	return time.Time{}
 }

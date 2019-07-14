@@ -22,7 +22,7 @@ func init() {
 type JSONTime time.Time
 
 func (p *JSONTime) FromDB(data []byte) error {
-	timeStd, _ := time.ParseInLocation("2006-01-02T15:04:05Z", string(data), time.Local)
+	timeStd, _ := time.ParseInLocation(time.RFC3339Nano, string(data), time.Local)
 	*p = JSONTime(timeStd)
 	return nil
 }
