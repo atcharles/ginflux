@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/influxdata/influxdb1-client/models"
-	jsoniter "github.com/json-iterator/go"
 )
 
 const TAGKey = "influx"
@@ -103,7 +102,7 @@ func (ip *innerPoint) parseBeanTags(bean interface{}) {
 			ip.tagTime, _ = v.Field(i).Interface().(time.Time)
 		}
 		if _, ok := tagMap[FieldJSON]; ok {
-			bts, _ := jsoniter.Marshal(v.Field(i).Interface())
+			bts, _ := json.Marshal(v.Field(i).Interface())
 			ip.fieldsMap[fieldName] = BytesToString(bts)
 		}
 	}
