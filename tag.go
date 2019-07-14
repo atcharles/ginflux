@@ -1,6 +1,8 @@
 package ginflux
 
 import (
+	"expvar"
+	"fmt"
 	"go/ast"
 	"reflect"
 	"strings"
@@ -33,7 +35,22 @@ type (
 	InterfaceTable interface {
 		Measurement() string
 	}
+
+	InterfaceTime interface {
+		Time() time.Time
+	}
 )
+
+func obj2Time(bean interface{}) time.Time {
+	if tt, ok := bean.(InterfaceTime); ok {
+		return tt.Time()
+	}
+	v1 := reflect.Indirect(reflect.ValueOf(bean))
+	if tt, ok := v1.Interface().(time.Time); ok {
+		return tt
+	}
+	return time.Time{}
+}
 
 func NewStructBean(bean interface{}) *StructBean {
 	return &StructBean{bean: bean}
@@ -96,10 +113,10 @@ func (ip *innerPoint) parseBeanTags(bean interface{}) {
 			ip.tagMap[fieldName] = ToStr(v.Field(i).Interface())
 		}
 		if _, ok := tagMap[Field]; ok {
-			ip.fieldsMap[fieldName] = v.Field(i).Interface()
+			ip.fieldsMap[fieldName] = fieldValue(v.Field(i).Interface())
 		}
 		if _, ok := tagMap[TAGTime]; ok {
-			ip.tagTime, _ = v.Field(i).Interface().(time.Time)
+			ip.tagTime = obj2Time(v.Field(i).Interface())
 		}
 		if _, ok := tagMap[FieldJSON]; ok {
 			bts, _ := json.Marshal(v.Field(i).Interface())
@@ -122,4 +139,19 @@ func tagMap(tags []string) MapString {
 		}
 	}
 	return mp
+}
+
+func fieldValue(field interface{}) interface{} {
+	field = reflect.Indirect(reflect.ValueOf(field)).Interface()
+	switch val := field.(type) {
+	case float32, float64, int, int8, int16, int32,
+		int64, uint, uint8, uint16, uint32, uint64, string:
+		return val
+	case []byte:
+		return BytesToString(val)
+	case expvar.Var:
+		return val.String()
+	default:
+		return fmt.Sprintf("%v", val)
+	}
 }

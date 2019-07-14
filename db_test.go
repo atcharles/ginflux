@@ -16,8 +16,8 @@ func (m *TModel) Measurement() string {
 }
 
 type TEmbedded struct {
-	UID     int64      `influx:"tag"`
-	Created *time.Time `influx:"time json"`
+	UID     int64     `influx:"tag"`
+	Created *JSONTime `influx:"time field name=created_field"`
 }
 
 func Test_db_insert(t *testing.T) {
@@ -28,7 +28,7 @@ func Test_db_insert(t *testing.T) {
 			Name:   "model",
 		}
 		b1.UID = int64(i) + 1
-		now := time.Now()
+		now := JSONTime(time.Now())
 		b1.Created = &now
 		beans = append(beans, b1)
 	}

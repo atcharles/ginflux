@@ -1,12 +1,12 @@
 package ginflux
 
 import (
+	"expvar"
 	"fmt"
 	"reflect"
 	"runtime"
 	"strconv"
 	"strings"
-	"time"
 	"unsafe"
 )
 
@@ -156,8 +156,8 @@ func ToStr(value interface{}, args ...int) (s string) {
 		s = v
 	case []byte:
 		s = string(v)
-	case time.Time:
-		s = v.Format("2006-01-02 15:04:05")
+	case expvar.Var:
+		s = v.String()
 	default:
 		s = fmt.Sprintf("%v", v)
 	}
