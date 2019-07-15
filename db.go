@@ -42,11 +42,11 @@ func (d *db) autoReleaseCallback(fn func(db *db) error) error {
 	if err != nil {
 		return err
 	}
+	defer oc.Release()
 	d1.client = oc
 	if err = fn(d1); err != nil {
 		return err
 	}
-	d1.client.Release()
 	return nil
 }
 
