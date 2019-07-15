@@ -63,7 +63,9 @@ func (d *db) scopeSearch() *search {
 }
 
 func (d *db) Query(str string, bean ...interface{}) error {
-	return d.scopeSearch().queryDO(str).exec(bean...)
+	return d.autoReleaseCallback(func(db *db) error {
+		return db.scopeSearch().queryDO(str).exec(bean...)
+	})
 }
 
 func (d *db) Insert(bean interface{}) error {
