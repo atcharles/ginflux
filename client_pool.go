@@ -143,6 +143,7 @@ func (o *oClient) Release() {
 	}
 	o.lock.Lock()
 	defer func() {
+		o.lock.Unlock()
 		o.op.pool <- o
 	}()
 	if !o.alive {
