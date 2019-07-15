@@ -1,6 +1,7 @@
 package ginflux
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 	"strconv"
@@ -106,13 +107,26 @@ func (d *db) insert(bean interface{}) (err error) {
 	return
 }
 
+var (
+	ErrEmpty = errors.New("empty")
+)
+
 func bindSlice(rp *ic.Response, bean interface{}) error {
+	if rp.Error() != nil {
+		return rp.Error()
+	}
 	vv := reflect.ValueOf(bean)
 	if vv.Kind() != reflect.Ptr {
 		panic("need pointer for bind bean")
 	}
 	beanValue := reflect.Indirect(vv)
 	var indexMap = make(map[string]int)
+	if len(rp.Results) == 0 {
+		return fmt.Errorf("没有返回的数据:服务端错误 %s", rp.Error().Error())
+	}
+	if len(rp.Results[0].Series) == 0 {
+		return ErrEmpty
+	}
 	columns := rp.Results[0].Series[0].Columns
 	for i, column := range columns {
 		indexMap[column] = i
