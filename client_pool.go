@@ -142,13 +142,14 @@ func (o *oClient) Release() {
 		return
 	}
 	o.lock.Lock()
-	defer o.lock.Unlock()
+	defer func() {
+		o.op.pool <- o
+	}()
 	if !o.alive {
 		return
 	}
 	if !o.inUsing {
 		return
 	}
-	o.op.pool <- o
 	o.inUsing = false
 }
