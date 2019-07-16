@@ -2,6 +2,7 @@ package ginflux
 
 import (
 	"errors"
+	"fmt"
 	"reflect"
 	"runtime"
 	"strconv"
@@ -205,11 +206,25 @@ func (s StringVal) Bind(fieldValue *reflect.Value) (err error) {
 	case reflect.String:
 		fieldValue.SetString(string(s))
 	default:
-		v := fieldValue.Interface()
-		if err = json.Unmarshal(StringToBytes(string(s)), &v); err != nil {
-			return
+		err = s.MapInterfaceToStruct(fieldValue)
+	}
+	return
+}
+
+func (s StringVal) MapInterfaceToStruct(dstVal *reflect.Value) (err error) {
+	vv := dstVal.Interface()
+	if err = json.Unmarshal(StringToBytes(string(s)), &vv); err != nil {
+		return
+	}
+	if interfaceMap, ok := vv.(map[string]interface{}); !ok {
+		return fmt.Errorf("type of value is not map[string]interface{}")
+	} else {
+		for key, value := range interfaceMap {
+			fieldValue := dstVal.FieldByName(key)
+			if err = StringVal(ToStr(value)).Bind(&fieldValue); err != nil {
+				return
+			}
 		}
-		fieldValue.Set(reflect.ValueOf(v))
 	}
 	return
 }

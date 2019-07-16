@@ -14,5 +14,8 @@ func Test_Query(t *testing.T) {
 	}
 	for _, val := range beans {
 		fmt.Printf("bean value is :%#v\n", val)
+		b, _ := json.MarshalIndent(val, "", "  ")
+		fmt.Printf("%s\n", b)
+
 	}
 }

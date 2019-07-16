@@ -86,14 +86,6 @@ func (ip *innerPoint) def() {
 	}
 }
 
-/*func (ip *innerPoint) bindBean(bean interface{}) {
-	ip.def()
-	if reflect.TypeOf(bean).Kind() != reflect.Ptr {
-		panic("bindBean: need ptr")
-	}
-	//v := reflect.Indirect(reflect.ValueOf(bean))
-}*/
-
 func (ip *innerPoint) parseBeanTags(bean interface{}) {
 	ip.def()
 	v := reflect.Indirect(reflect.ValueOf(bean))

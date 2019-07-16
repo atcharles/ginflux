@@ -9,6 +9,6 @@ var json API
 
 func init() {
 	extra.RegisterFuzzyDecoders()
-	extra.SetNamingStrategy(extra.LowerCaseWithUnderscores)
+	//extra.SetNamingStrategy(extra.LowerCaseWithUnderscores)
 	json = ConfigCompatibleWithStandardLibrary
 }

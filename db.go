@@ -188,7 +188,7 @@ func bindBean(item *reflect.Value, row []interface{}, indexMap map[string]int) e
 		}
 		if _, ok := tagMap[FieldJSON]; ok {
 			fVal = reflect.Indirect(fVal)
-			if err := json.Unmarshal(StringToBytes(setVV.(string)), &fVal); err != nil {
+			if err := StringVal(ToStr(setVV)).MapInterfaceToStruct(&fVal); err != nil {
 				return err
 			}
 			continue
@@ -207,7 +207,6 @@ func bindBean(item *reflect.Value, row []interface{}, indexMap map[string]int) e
 			ns, _ := strconv.ParseInt(timeStr, 10, 64)
 			tm1 := time.Unix(int64(time.Duration(ns)/time.Second), int64(time.Duration(ns)%time.Second))
 			fVal.Set(reflect.ValueOf(tm1).Convert(fVal.Type()))
-			//fmt.Printf("%#v\n", fVal.Interface().(JSONTime).String())
 			continue
 		}
 		switch val := fVal.Interface().(type) {
