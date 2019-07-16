@@ -3,30 +3,14 @@ package ginflux
 import (
 	"fmt"
 	"testing"
-
-	ic "github.com/influxdata/influxdb1-client/v2"
 )
 
 var (
-	opts = Options{
-		httpConf: ic.HTTPConfig{
-			Addr:               "http://127.0.0.1:8086",
-			Username:           "",
-			Password:           "",
-			UserAgent:          "",
-			Timeout:            0,
-			InsecureSkipVerify: false,
-			TLSConfig:          nil,
-			Proxy:              nil,
-		},
-		minOpen: 10,
-		maxOpen: 300,
-	}
 	testGlobalEngine *Engine
 )
 
 func init() {
-	eg, err := NewEngine(opts)
+	eg, err := NewEngine(DefOpts)
 	if err != nil {
 		panic(err)
 	}
@@ -62,7 +46,7 @@ func TestEngine_SyncDB(t *testing.T) {
 }
 
 func TestNewEngine(t *testing.T) {
-	eg, err := NewEngine(opts)
+	eg, err := NewEngine(DefOpts)
 	fmt.Printf("%#v %#v\n", eg, err)
 }
 

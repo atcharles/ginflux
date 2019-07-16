@@ -2,6 +2,7 @@ package ginflux
 
 import (
 	"fmt"
+	"log"
 	"sync"
 	"testing"
 	"time"
@@ -9,9 +10,22 @@ import (
 	client "github.com/influxdata/influxdb1-client/v2"
 )
 
+func Test_d1(t *testing.T) {
+	ch := make(chan int, 100)
+	for {
+		select {
+		case a := <-ch:
+			fmt.Println(a)
+		case <-time.After(time.Second * 2):
+			fmt.Println("push to channel failed")
+			return
+		}
+	}
+}
+
 func TestNewOPool(t *testing.T) {
 	pl := NewOPool(Options{
-		httpConf: client.HTTPConfig{
+		HttpConf: client.HTTPConfig{
 			Addr:               "http://127.0.0.1:8086",
 			Username:           "",
 			Password:           "",
@@ -21,8 +35,8 @@ func TestNewOPool(t *testing.T) {
 			TLSConfig:          nil,
 			Proxy:              nil,
 		},
-		minOpen: 10,
-		maxOpen: 300,
+		MinOpen: 10,
+		MaxOpen: 20,
 	})
 
 	wg := sync.WaitGroup{}
@@ -38,7 +52,8 @@ func TestNewOPool(t *testing.T) {
 			fmt.Printf("current open clients count is %d\n", pl.CurrentOpen())
 			oc, err := pl.Acquire()
 			if err != nil {
-				panic(err)
+				log.Println(err)
+				return
 			}
 			defer oc.Release()
 			a, _, _ := oc.GetInfluxClient().Ping(time.Second)
