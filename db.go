@@ -65,7 +65,10 @@ func (d *db) scopeSearch() *search {
 func (d *db) Query(str string, bean ...interface{}) (s *search, err error) {
 	err = d.autoReleaseCallback(func(db *db) error {
 		s = db.scopeSearch().queryDO(str).exec(bean...)
-		return nil
+		if s.Err != nil {
+			return s.Err
+		}
+		return s.Result.Error()
 	})
 	return
 }

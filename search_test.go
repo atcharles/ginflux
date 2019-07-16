@@ -8,11 +8,8 @@ import (
 func Test_Query(t *testing.T) {
 	str := `SELECT * FROM "user" ORDER BY "time" DESC LIMIT 2 OFFSET 0`
 	var beans []*TModel
-	s, err := testGlobalEngine.DB("db1").Query(str, &beans)
+	_, err := testGlobalEngine.DB("db1").Query(str, &beans)
 	if err != nil {
-		t.Error(err)
-	}
-	if s.Err != nil {
 		t.Error(err)
 	}
 	for _, val := range beans {
@@ -27,9 +24,6 @@ func Test_Drop(t *testing.T) {
 	str := `DROP SERIES FROM "user"`
 	s, err := testGlobalEngine.DB("db1").Query(str)
 	if err != nil {
-		t.Error(err)
-	}
-	if s.Err != nil {
 		t.Error(err)
 	}
 	fmt.Printf("result is %#v\n", s.Result)

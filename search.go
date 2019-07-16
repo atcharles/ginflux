@@ -47,10 +47,6 @@ func (s *search) exec(bean ...interface{}) *search {
 		return s
 	}
 	s.Result = r
-	if r.Error() != nil {
-		s.Err = r.Error()
-		return s
-	}
 	s.db.client.Release()
 	if len(bean) > 0 {
 		s.Err = bindSlice(r, bean[0])
