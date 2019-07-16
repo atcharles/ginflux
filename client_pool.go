@@ -8,8 +8,9 @@ import (
 	ic "github.com/influxdata/influxdb1-client/v2"
 )
 
-func NewOPool(opt Options) *oPool {
-	o := &oPool{
+//NewOPool ...
+func NewOPool(opt Options) *OPool {
+	o := &OPool{
 		lock:        new(sync.RWMutex),
 		opt:         opt,
 		currentOpen: 0,
@@ -23,7 +24,7 @@ func NewOPool(opt Options) *oPool {
 	if o.opt.maxOpen == 0 {
 		o.opt.maxOpen = 100
 	}
-	o.pool = make(chan *oClient, opt.maxOpen)
+	o.pool = make(chan *OClient, opt.maxOpen)
 	if o.opt.getTimeout == 0 {
 		o.opt.getTimeout = time.Second * 2
 	}
@@ -31,6 +32,7 @@ func NewOPool(opt Options) *oPool {
 }
 
 type (
+	//Options ...
 	Options struct {
 		httpConf ic.HTTPConfig
 		//从池中取资源的超时时间
@@ -38,44 +40,49 @@ type (
 		minOpen    int
 		maxOpen    int
 	}
-
-	oPool struct {
+	//OPool ...
+	OPool struct {
 		lock        *sync.RWMutex
 		opt         Options
 		currentOpen int64
-		pool        chan *oClient
+		pool        chan *OClient
 	}
-
-	oClient struct {
+	//OClient ...
+	OClient struct {
 		ic.Client
 		lock *sync.RWMutex
 		//是否正在使用
 		inUsing bool
 		alive   bool
 		created time.Time
-		op      *oPool
+		op      *OPool
 	}
 )
 
-func (o *oPool) CurrentOpen() int64 {
+//CurrentOpen ...
+func (o *OPool) CurrentOpen() int64 {
 	o.lock.RLock()
 	n := o.currentOpen
 	o.lock.RUnlock()
 	return n
 }
 
-func (o *oPool) Increment(n int64) {
+//Increment ...
+func (o *OPool) Increment(n int64) {
 	o.lock.Lock()
 	o.currentOpen += n
 	o.lock.Unlock()
 }
 
 var (
+	//ErrMaxOpen ...
 	ErrMaxOpen = errors.New("连接数超出最大限制")
+	//ErrInUsing ...
 	ErrInUsing = errors.New("连接正在使用,不能共享")
 )
 
-func (o *oPool) Acquire() (cl *oClient, err error) {
+//Acquire ...
+func (o *OPool) Acquire() (cl *OClient, err error) {
 	now := time.Now()
 	for {
 		cl, err = o.getOrCreateOne()
@@ -89,7 +96,7 @@ func (o *oPool) Acquire() (cl *oClient, err error) {
 	return
 }
 
-func (o *oPool) getOrCreateOne() (oc *oClient, err error) {
+func (o *OPool) getOrCreateOne() (oc *OClient, err error) {
 	select {
 	case oc = <-o.pool:
 		oc.lock.RLock()
@@ -114,8 +121,8 @@ func (o *oPool) getOrCreateOne() (oc *oClient, err error) {
 	return
 }
 
-func (o *oPool) newOClient() (oc *oClient, err error) {
-	oc = &oClient{
+func (o *OPool) newOClient() (oc *OClient, err error) {
+	oc = &OClient{
 		lock:    new(sync.RWMutex),
 		inUsing: true,
 		alive:   true,
@@ -133,11 +140,13 @@ func (o *oPool) newOClient() (oc *oClient, err error) {
 	return
 }
 
-func (o *oClient) GetInfluxClient() ic.Client {
+//GetInfluxClient ...
+func (o *OClient) GetInfluxClient() ic.Client {
 	return o.Client
 }
 
-func (o *oClient) Release() {
+//Release ...
+func (o *OClient) Release() {
 	if o == nil {
 		return
 	}

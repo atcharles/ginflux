@@ -1,19 +1,23 @@
 package ginflux
 
+//Version ...
 const Version = "v0.0.1"
 
 type (
+	//Engine ...
 	Engine struct {
-		pool    *oPool
+		pool    *OPool
 		session *Session
 	}
 )
 
-func (e *Engine) DB(name string) *db {
+//DB ...
+func (e *Engine) DB(name string) *Database {
 	return e.Session().NewDB(name)
 }
 
-func (e *Engine) NewDB(name string) (dbInstance *db, err error) {
+//NewDB ...
+func (e *Engine) NewDB(name string) (dbInstance *Database, err error) {
 	sn, er := e.newSession()
 	if er != nil {
 		err = er
@@ -23,10 +27,12 @@ func (e *Engine) NewDB(name string) (dbInstance *db, err error) {
 	return
 }
 
+//Session ...
 func (e *Engine) Session() *Session {
 	return &Session{engine: e}
 }
 
+//NewSession ...
 func (e *Engine) NewSession() (session *Session, err error) {
 	return e.newSession()
 }
@@ -37,9 +43,10 @@ func (e *Engine) newSession() (session *Session, err error) {
 	return
 }
 
+//NewEngine ...
 func NewEngine(opts Options) (eg *Engine, err error) {
 	pool := NewOPool(opts)
-	var oc *oClient
+	var oc *OClient
 	oc, err = pool.Acquire()
 	if err != nil {
 		return
@@ -50,10 +57,12 @@ func NewEngine(opts Options) (eg *Engine, err error) {
 	return
 }
 
-func (e *Engine) Acquire() (cl *oClient, err error) {
+//Acquire ...
+func (e *Engine) Acquire() (cl *OClient, err error) {
 	return e.pool.Acquire()
 }
 
+//SyncDB ...
 func (e *Engine) SyncDB(beans ...RetentionPolicy) (err error) {
 	session, er := e.newSession()
 	if er != nil {

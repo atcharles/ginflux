@@ -9,12 +9,13 @@ import (
 	"sync"
 )
 
-// name translation between struct, fields names and table, column names
+//IMapper name translation between struct, fields names and table, column names
 type IMapper interface {
 	Obj2Table(string) string
 	Table2Obj(string) string
 }
 
+//CacheMapper ...
 type CacheMapper struct {
 	oriMapper      IMapper
 	obj2tableCache map[string]string
@@ -23,12 +24,14 @@ type CacheMapper struct {
 	table2objMutex sync.RWMutex
 }
 
+//NewCacheMapper ...
 func NewCacheMapper(mapper IMapper) *CacheMapper {
 	return &CacheMapper{oriMapper: mapper, obj2tableCache: make(map[string]string),
 		table2objCache: make(map[string]string),
 	}
 }
 
+//Obj2Table ...
 func (m *CacheMapper) Obj2Table(o string) string {
 	m.obj2tableMutex.RLock()
 	t, ok := m.obj2tableCache[o]
@@ -44,6 +47,7 @@ func (m *CacheMapper) Obj2Table(o string) string {
 	return t
 }
 
+//Table2Obj ...
 func (m *CacheMapper) Table2Obj(t string) string {
 	m.table2objMutex.RLock()
 	o, ok := m.table2objCache[t]
@@ -64,10 +68,12 @@ func (m *CacheMapper) Table2Obj(t string) string {
 type SameMapper struct {
 }
 
+//Obj2Table ...
 func (m SameMapper) Obj2Table(o string) string {
 	return o
 }
 
+//Table2Obj ...
 func (m SameMapper) Table2Obj(t string) string {
 	return t
 }
@@ -92,6 +98,7 @@ func snakeCasedName(name string) string {
 	return string(newstr)
 }
 
+//Obj2Table ...
 func (mapper SnakeMapper) Obj2Table(name string) string {
 	return snakeCasedName(name)
 }
@@ -120,6 +127,7 @@ func titleCasedName(name string) string {
 	return string(newstr)
 }
 
+//Table2Obj ...
 func (mapper SnakeMapper) Table2Obj(name string) string {
 	return titleCasedName(name)
 }
@@ -161,10 +169,12 @@ func gonicCasedName(name string) string {
 	return strings.ToLower(string(newstr))
 }
 
+//Obj2Table ...
 func (mapper GonicMapper) Obj2Table(name string) string {
 	return gonicCasedName(name)
 }
 
+//Table2Obj ...
 func (mapper GonicMapper) Table2Obj(name string) string {
 	newstr := make([]rune, 0)
 
@@ -184,7 +194,7 @@ func (mapper GonicMapper) Table2Obj(name string) string {
 	return string(newstr)
 }
 
-// A GonicMapper that contains a list of common initialisms taken from golang/lint
+// LintGonicMapper that contains a list of common initialisms taken from golang/lint
 var LintGonicMapper = GonicMapper{
 	"API":   true,
 	"ASCII": true,
@@ -221,38 +231,44 @@ var LintGonicMapper = GonicMapper{
 	"XSS":   true,
 }
 
-// provide prefix table name support
+//PrefixMapper provide prefix table name support
 type PrefixMapper struct {
 	Mapper IMapper
 	Prefix string
 }
 
+//Obj2Table ...
 func (mapper PrefixMapper) Obj2Table(name string) string {
 	return mapper.Prefix + mapper.Mapper.Obj2Table(name)
 }
 
+//Table2Obj ...
 func (mapper PrefixMapper) Table2Obj(name string) string {
 	return mapper.Mapper.Table2Obj(name[len(mapper.Prefix):])
 }
 
+//NewPrefixMapper ...
 func NewPrefixMapper(mapper IMapper, prefix string) PrefixMapper {
 	return PrefixMapper{mapper, prefix}
 }
 
-// provide suffix table name support
+//SuffixMapper provide suffix table name support
 type SuffixMapper struct {
 	Mapper IMapper
 	Suffix string
 }
 
+//Obj2Table ...
 func (mapper SuffixMapper) Obj2Table(name string) string {
 	return mapper.Mapper.Obj2Table(name) + mapper.Suffix
 }
 
+//Table2Obj ...
 func (mapper SuffixMapper) Table2Obj(name string) string {
 	return mapper.Mapper.Table2Obj(name[:len(name)-len(mapper.Suffix)])
 }
 
+//NewSuffixMapper ...
 func NewSuffixMapper(mapper IMapper, suffix string) SuffixMapper {
 	return SuffixMapper{mapper, suffix}
 }

@@ -1,14 +1,14 @@
 package ginflux
 
 import (
-	. "github.com/json-iterator/go"
+	jn "github.com/json-iterator/go"
 	"github.com/json-iterator/go/extra"
 )
 
-var json API
+var json jn.API
 
 func init() {
 	extra.RegisterFuzzyDecoders()
 	//extra.SetNamingStrategy(extra.LowerCaseWithUnderscores)
-	json = ConfigCompatibleWithStandardLibrary
+	json = jn.ConfigCompatibleWithStandardLibrary
 }

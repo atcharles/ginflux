@@ -7,8 +7,10 @@ import (
 )
 
 const (
+	//TimeZone ...
 	TimeZone = "Asia/Shanghai"
-	Custom   = "2006-01-02 15:04:05"
+	//Custom ...
+	Custom = "2006-01-02 15:04:05"
 )
 
 func init() {
@@ -21,25 +23,30 @@ func init() {
 //JSONTime ...
 type JSONTime time.Time
 
+//FromDB ...
 func (p *JSONTime) FromDB(data []byte) error {
 	timeStd, _ := time.ParseInLocation(time.RFC3339Nano, string(data), time.Local)
 	*p = JSONTime(timeStd)
 	return nil
 }
 
+//ToDB ...
 func (p *JSONTime) ToDB() (b []byte, err error) {
 	b = []byte(p.String())
 	return
 }
 
+//SetByTime ...
 func (p *JSONTime) SetByTime(timeVal time.Time) {
 	*p = JSONTime(timeVal)
 }
 
+//Time ...
 func (p *JSONTime) Time() time.Time {
 	return p.Convert2Time()
 }
 
+//Convert2Time ...
 func (p *JSONTime) Convert2Time() time.Time {
 	return time.Time(*p).Local()
 }

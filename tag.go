@@ -9,14 +9,17 @@ import (
 	"github.com/influxdata/influxdb1-client/models"
 )
 
+//TAGKey ...
 const TAGKey = "influx"
 
 type (
-	Map       map[string]interface{}
+	//Map ...
+	Map map[string]interface{}
+	//MapString ...
 	MapString map[string]string
 )
 
-//keywords
+//Keywords
 const (
 	TAG       = "tag"
 	Field     = "field"
@@ -25,15 +28,17 @@ const (
 	FieldJSON = "json"
 )
 
+//StructBean ...
 type StructBean struct {
 	bean interface{}
 }
 
 type (
+	//InterfaceTable ...
 	InterfaceTable interface {
 		Measurement() string
 	}
-
+	//InterfaceTime ...
 	InterfaceTime interface {
 		Time() time.Time
 	}
@@ -54,10 +59,12 @@ func obj2Time(bean interface{}) time.Time {
 	return time.Time{}
 }
 
+//NewStructBean ...
 func NewStructBean(bean interface{}) *StructBean {
 	return &StructBean{bean: bean}
 }
 
+//Point ...
 func (s *StructBean) Point() models.Point {
 	ip := new(innerPoint)
 	ip.parseBeanTags(s.bean)

@@ -4,8 +4,9 @@ import (
 	ic "github.com/influxdata/influxdb1-client/v2"
 )
 
-type search struct {
-	db         *db
+//Search ...
+type Search struct {
+	Database   *Database
 	conditions []Map
 
 	query  ic.Query
@@ -13,17 +14,13 @@ type search struct {
 	Err    error
 }
 
-/**
-*	innerConditions()
-**/
-
 const (
 	queryLang = "query"
 	argsLang  = "args"
 	//quoteReplaceStr = "?"
 )
 
-func (s *search) innerConditions(beans ...interface{}) *search {
+func (s *Search) innerConditions(beans ...interface{}) *Search {
 	if len(beans) == 0 {
 		return s
 	}
@@ -35,19 +32,19 @@ func (s *search) innerConditions(beans ...interface{}) *search {
 	return s
 }
 
-func (s *search) queryDO(str string) *search {
-	s.query = ic.NewQuery(str, s.db.name, "ns")
+func (s *Search) queryDO(str string) *Search {
+	s.query = ic.NewQuery(str, s.Database.name, "ns")
 	return s
 }
 
-func (s *search) exec(bean ...interface{}) *search {
-	r, e := s.db.client.Query(s.query)
+func (s *Search) exec(bean ...interface{}) *Search {
+	r, e := s.Database.client.Query(s.query)
 	if e != nil {
 		s.Err = e
 		return s
 	}
 	s.Result = r
-	s.db.client.Release()
+	s.Database.client.Release()
 	if len(bean) > 0 {
 		s.Err = bindSlice(r, bean[0])
 	}

@@ -123,12 +123,13 @@ func (a argInt) Get(i int, args ...int) (r int) {
 	return
 }
 
+//Conversion ...
 type Conversion interface {
 	FromDB(data []byte) error
 	ToDB() (b []byte, err error)
 }
 
-// Convert any type to string.
+//ToStr Convert any type to string.
 func ToStr(value interface{}, args ...int) (s string) {
 	switch v := value.(type) {
 	case bool:
@@ -171,8 +172,10 @@ func ToStr(value interface{}, args ...int) (s string) {
 	return s
 }
 
+//StringVal ...
 type StringVal string
 
+//Bind ...
 func (s StringVal) Bind(fieldValue *reflect.Value) (err error) {
 	fieldType := fieldValue.Type()
 	if !fieldValue.CanAddr() {
@@ -211,19 +214,23 @@ func (s StringVal) Bind(fieldValue *reflect.Value) (err error) {
 	return
 }
 
+//MapInterfaceToStruct ...
 func (s StringVal) MapInterfaceToStruct(dstVal *reflect.Value) (err error) {
 	vv := dstVal.Interface()
 	if err = json.Unmarshal(StringToBytes(string(s)), &vv); err != nil {
 		return
 	}
-	if interfaceMap, ok := vv.(map[string]interface{}); !ok {
+	var (
+		interfaceMap map[string]interface{}
+		ok           bool
+	)
+	if interfaceMap, ok = vv.(map[string]interface{}); !ok {
 		return fmt.Errorf("type of value is not map[string]interface{}")
-	} else {
-		for key, value := range interfaceMap {
-			fieldValue := dstVal.FieldByName(key)
-			if err = StringVal(ToStr(value)).Bind(&fieldValue); err != nil {
-				return
-			}
+	}
+	for key, value := range interfaceMap {
+		fieldValue := dstVal.FieldByName(key)
+		if err = StringVal(ToStr(value)).Bind(&fieldValue); err != nil {
+			return
 		}
 	}
 	return

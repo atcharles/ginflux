@@ -66,7 +66,7 @@ func TestNewEngine(t *testing.T) {
 	fmt.Printf("%#v %#v\n", eg, err)
 }
 
-func mustGetClient() *oClient {
+func mustGetClient() *OClient {
 	client, err := testGlobalEngine.Acquire()
 	if err != nil {
 		panic(err)

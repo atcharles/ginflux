@@ -10,15 +10,17 @@ import (
 	ic "github.com/influxdata/influxdb1-client/v2"
 )
 
-type db struct {
+//Database ...
+type Database struct {
 	session        *Session
 	name           string
-	client         *oClient
+	client         *OClient
 	batchPointConf ic.BatchPointsConfig
 	bpsFunc        bpsActionFunc
 }
 
-func (d *db) SetName(name string) *db {
+//SetName ...
+func (d *Database) SetName(name string) *Database {
 	dNew := d.clone()
 	dNew.name = name
 	return dNew
@@ -26,17 +28,19 @@ func (d *db) SetName(name string) *db {
 
 type bpsActionFunc func(points ic.BatchPoints) error
 
-func (d *db) SetBpsFunc(bpsFunc bpsActionFunc) *db {
+//SetBpsFunc ...
+func (d *Database) SetBpsFunc(bpsFunc bpsActionFunc) *Database {
 	d.bpsFunc = bpsFunc
 	return d
 }
 
-func (d *db) SetBatchPointConf(batchPointConf ic.BatchPointsConfig) *db {
+//SetBatchPointConf ...
+func (d *Database) SetBatchPointConf(batchPointConf ic.BatchPointsConfig) *Database {
 	d.batchPointConf = batchPointConf
 	return d
 }
 
-func (d *db) autoReleaseCallback(fn func(db *db) error) error {
+func (d *Database) autoReleaseCallback(fn func(Database *Database) error) error {
 	d1 := d.clone()
 	oc, err := d1.session.engine.Acquire()
 	if err != nil {
@@ -50,21 +54,22 @@ func (d *db) autoReleaseCallback(fn func(db *db) error) error {
 	return nil
 }
 
-func (d *db) clone() *db {
-	return &db{
+func (d *Database) clone() *Database {
+	return &Database{
 		session: d.session,
 		name:    d.name,
 		client:  d.client,
 	}
 }
 
-func (d *db) scopeSearch() *search {
-	return &search{db: d.clone()}
+func (d *Database) scopeSearch() *Search {
+	return &Search{Database: d.clone()}
 }
 
-func (d *db) Query(str string, bean ...interface{}) (s *search, err error) {
-	err = d.autoReleaseCallback(func(db *db) error {
-		s = db.scopeSearch().queryDO(str).exec(bean...)
+//Query ...
+func (d *Database) Query(str string, bean ...interface{}) (s *Search, err error) {
+	err = d.autoReleaseCallback(func(Database *Database) error {
+		s = Database.scopeSearch().queryDO(str).exec(bean...)
 		if s.Err != nil {
 			return s.Err
 		}
@@ -73,13 +78,14 @@ func (d *db) Query(str string, bean ...interface{}) (s *search, err error) {
 	return
 }
 
-func (d *db) Insert(bean interface{}) error {
-	return d.autoReleaseCallback(func(db *db) error {
-		return db.insert(bean)
+//Insert ...
+func (d *Database) Insert(bean interface{}) error {
+	return d.autoReleaseCallback(func(Database *Database) error {
+		return Database.insert(bean)
 	})
 }
 
-func (d *db) insert(bean interface{}) (err error) {
+func (d *Database) insert(bean interface{}) (err error) {
 	if len(d.batchPointConf.Database) == 0 {
 		d.batchPointConf.Database = d.name
 	}
@@ -115,6 +121,7 @@ func (d *db) insert(bean interface{}) (err error) {
 }
 
 var (
+	//ErrEmpty ...
 	ErrEmpty = errors.New("empty")
 )
 

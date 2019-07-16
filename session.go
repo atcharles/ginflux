@@ -6,22 +6,26 @@ import (
 	ic "github.com/influxdata/influxdb1-client/v2"
 )
 
+//Session ...
 type Session struct {
 	engine *Engine
-	client *oClient
+	client *OClient
 }
 
-func (s *Session) Client() *oClient {
+//Client ...
+func (s *Session) Client() *OClient {
 	return s.client
 }
 
-func (s *Session) SetClient(client *oClient) *Session {
+//SetClient ...
+func (s *Session) SetClient(client *OClient) *Session {
 	s.client = client
 	return s
 }
 
-func (s *Session) NewDB(name string) (dbInstance *db) {
-	dbInstance = &db{name: name}
+//NewDB ...
+func (s *Session) NewDB(name string) (dbInstance *Database) {
+	dbInstance = &Database{name: name}
 	if s.client != nil {
 		dbInstance.client = s.client
 	}
@@ -36,10 +40,12 @@ func (s *Session) createDB(name string) error {
 	return err
 }
 
+//CreateDB ...
 func (s *Session) CreateDB(name string) error {
 	return s.createDB(name)
 }
 
+//CreateRetentionPolicy ...
 func (s *Session) CreateRetentionPolicy(rp RetentionPolicy) error {
 	//CREATE RETENTION POLICY <retention_policy_name>
 	// ON <database_name> DURATION <duration> REPLICATION <n> [SHARD DURATION <duration>] [DEFAULT]
@@ -69,6 +75,7 @@ func (s *Session) CreateRetentionPolicy(rp RetentionPolicy) error {
 	return nil
 }
 
+//Release ...
 func (s *Session) Release() {
 	s.client.Release()
 }

@@ -1,5 +1,6 @@
 package ginflux
 
+//RetentionPolicy ...
 type RetentionPolicy struct {
 	DBName        string
 	RPName        string
