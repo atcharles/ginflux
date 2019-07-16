@@ -62,10 +62,12 @@ func (d *db) scopeSearch() *search {
 	return &search{db: d.clone()}
 }
 
-func (d *db) Query(str string, bean ...interface{}) error {
-	return d.autoReleaseCallback(func(db *db) error {
-		return db.scopeSearch().queryDO(str).exec(bean...)
+func (d *db) Query(str string, bean ...interface{}) (s *search, err error) {
+	err = d.autoReleaseCallback(func(db *db) error {
+		s = db.scopeSearch().queryDO(str).exec(bean...)
+		return nil
 	})
+	return
 }
 
 func (d *db) Insert(bean interface{}) error {

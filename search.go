@@ -8,7 +8,9 @@ type search struct {
 	db         *db
 	conditions []Map
 
-	query ic.Query
+	query  ic.Query
+	Result *ic.Response
+	Err    error
 }
 
 /**
@@ -38,14 +40,20 @@ func (s *search) queryDO(str string) *search {
 	return s
 }
 
-func (s *search) exec(bean ...interface{}) error {
+func (s *search) exec(bean ...interface{}) *search {
 	r, e := s.db.client.Query(s.query)
 	if e != nil {
-		return e
+		s.Err = e
+		return s
+	}
+	s.Result = r
+	if r.Error() != nil {
+		s.Err = r.Error()
+		return s
 	}
 	s.db.client.Release()
 	if len(bean) > 0 {
-		return bindSlice(r, bean[0])
+		s.Err = bindSlice(r, bean[0])
 	}
-	return nil
+	return s
 }
