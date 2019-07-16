@@ -17,7 +17,6 @@ type Search struct {
 const (
 	queryLang = "query"
 	argsLang  = "args"
-	//quoteReplaceStr = "?"
 )
 
 func (s *Search) innerConditions(beans ...interface{}) *Search {

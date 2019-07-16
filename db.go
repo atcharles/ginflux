@@ -69,6 +69,7 @@ func (d *Database) scopeSearch() *Search {
 //Query ...
 func (d *Database) Query(str string, bean ...interface{}) (s *Search, err error) {
 	err = d.autoReleaseCallback(func(Database *Database) error {
+		//log.Println("------------------------!!!")
 		s = Database.scopeSearch().queryDO(str).exec(bean...)
 		if s.Err != nil {
 			return s.Err

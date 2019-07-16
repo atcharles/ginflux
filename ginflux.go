@@ -1,7 +1,28 @@
 package ginflux
 
+import (
+	ic "github.com/influxdata/influxdb1-client/v2"
+)
+
 //Version ...
 const Version = "v0.0.1"
+
+var (
+	DefOpts = Options{
+		HttpConf: ic.HTTPConfig{
+			Addr:               "http://127.0.0.1:8086",
+			Username:           "",
+			Password:           "",
+			UserAgent:          "",
+			Timeout:            0,
+			InsecureSkipVerify: false,
+			TLSConfig:          nil,
+			Proxy:              nil,
+		},
+		MinOpen: 2,
+		MaxOpen: 100,
+	}
+)
 
 type (
 	//Engine ...

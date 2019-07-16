@@ -15,30 +15,30 @@ func NewOPool(opt Options) *OPool {
 		opt:         opt,
 		currentOpen: 0,
 	}
-	if o.opt.minOpen > o.opt.maxOpen {
+	if o.opt.MinOpen > o.opt.MaxOpen {
 		panic("minOpen 不能大于 maxOpen")
 	}
-	if o.opt.minOpen == 0 {
-		o.opt.minOpen = 10
+	if o.opt.MinOpen == 0 {
+		o.opt.MinOpen = 10
 	}
-	if o.opt.maxOpen == 0 {
-		o.opt.maxOpen = 100
+	if o.opt.MaxOpen == 0 {
+		o.opt.MaxOpen = 100
 	}
-	o.pool = make(chan *OClient, opt.maxOpen)
-	if o.opt.getTimeout == 0 {
-		o.opt.getTimeout = time.Second * 2
+	if o.opt.GetTimeout == 0 {
+		o.opt.GetTimeout = time.Millisecond * 100
 	}
+	o.pool = make(chan *OClient, o.opt.MaxOpen)
 	return o
 }
 
 type (
 	//Options ...
 	Options struct {
-		httpConf ic.HTTPConfig
+		HttpConf ic.HTTPConfig
 		//从池中取资源的超时时间
-		getTimeout time.Duration
-		minOpen    int
-		maxOpen    int
+		GetTimeout time.Duration
+		MinOpen    int
+		MaxOpen    int
 	}
 	//OPool ...
 	OPool struct {
@@ -77,65 +77,52 @@ func (o *OPool) Increment(n int64) {
 var (
 	//ErrMaxOpen ...
 	ErrMaxOpen = errors.New("连接数超出最大限制")
-	//ErrInUsing ...
-	ErrInUsing = errors.New("连接正在使用,不能共享")
 )
 
 //Acquire ...
 func (o *OPool) Acquire() (cl *OClient, err error) {
-	now := time.Now()
-	for {
-		cl, err = o.getOrCreateOne()
-		if err == nil {
-			break
-		}
-		if time.Now().After(now.Add(o.opt.getTimeout)) {
-			return
-		}
+	return o.getOrCreateOne()
+}
+
+func (o *OPool) ping(oc *OClient) (err error) {
+	oc.lock.Lock()
+	defer oc.lock.Unlock()
+	_, _, err = oc.Ping(time.Second * 1)
+	if err == nil {
+		oc.inUsing = true
+		return
 	}
+	_ = oc.Close()
+	oc.alive = false
+	o.Increment(-1)
 	return
 }
 
 func (o *OPool) getOrCreateOne() (oc *OClient, err error) {
 	select {
 	case oc = <-o.pool:
-		oc.lock.RLock()
-		if oc.inUsing && o.CurrentOpen() < int64(o.opt.maxOpen) {
-			oc.lock.RUnlock()
-			err = ErrInUsing
+		if err = o.ping(oc); err != nil {
 			return
 		}
-		oc.lock.RUnlock()
-	default:
-		if oc, err = o.newOClient(); err != nil {
+	case <-time.After(o.opt.GetTimeout):
+		o.lock.Lock()
+		defer o.lock.Unlock()
+		if o.currentOpen >= int64(o.opt.MaxOpen) {
+			err = ErrMaxOpen
 			return
 		}
-	}
-	_, _, err = oc.Ping(time.Second * 1)
-	if err != nil {
-		oc.lock.Lock()
-		oc.alive = false
-		oc.lock.Unlock()
-		return
-	}
-	return
-}
-
-func (o *OPool) newOClient() (oc *OClient, err error) {
-	oc = &OClient{
-		lock:    new(sync.RWMutex),
-		inUsing: true,
-		alive:   true,
-		created: time.Now(),
-		op:      o,
-	}
-	oc.Client, err = ic.NewHTTPClient(o.opt.httpConf)
-	select {
-	case o.pool <- oc:
-		o.Increment(1)
-	default:
-		err = ErrMaxOpen
-		return
+		oc = &OClient{
+			lock:    new(sync.RWMutex),
+			inUsing: true,
+			alive:   true,
+			created: time.Now(),
+			op:      o,
+		}
+		oc.Client, err = ic.NewHTTPClient(o.opt.HttpConf)
+		if err != nil {
+			return
+		}
+		o.currentOpen++
 	}
 	return
 }
@@ -150,16 +137,15 @@ func (o *OClient) Release() {
 	if o == nil {
 		return
 	}
-	o.lock.Lock()
-	defer func() {
-		o.lock.Unlock()
-		o.op.pool <- o
-	}()
 	if !o.alive {
 		return
 	}
-	if !o.inUsing {
-		return
-	}
+	o.lock.Lock()
 	o.inUsing = false
+	o.lock.Unlock()
+
+	select {
+	case o.op.pool <- o:
+	default:
+	}
 }
