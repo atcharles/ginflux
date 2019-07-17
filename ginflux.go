@@ -67,14 +67,12 @@ func (e *Engine) newSession() (session *Session, err error) {
 //NewEngine ...
 func NewEngine(opts Options) (eg *Engine, err error) {
 	pool := NewOPool(opts)
-	var oc *OClient
-	oc, err = pool.Acquire()
-	if err != nil {
-		return
+	for i := 0; i < pool.opt.MinOpen; i++ {
+		if err = pool.newClient(); err != nil {
+			return
+		}
 	}
-	defer oc.Release()
-	eg = &Engine{pool: pool, session: &Session{}}
-	eg.session.engine = eg
+	eg = &Engine{pool: pool, session: &Session{engine: eg}}
 	return
 }
 
