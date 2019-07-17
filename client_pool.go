@@ -77,6 +77,7 @@ func (o *OPool) Increment(n int64) {
 var (
 	//ErrMaxOpen ...
 	ErrMaxOpen = errors.New("连接数超出最大限制")
+	ErrTimeout = errors.New("从池中获取连接超时")
 )
 
 //Acquire ...
@@ -93,36 +94,53 @@ func (o *OPool) ping(oc *OClient) (err error) {
 		return
 	}
 	_ = oc.Close()
-	oc.alive = false
 	o.Increment(-1)
+	oc.alive = false
+	return
+}
+
+func (o *OPool) newClient() (err error) {
+	o.lock.Lock()
+	defer o.lock.Unlock()
+	if o.currentOpen >= int64(o.opt.MaxOpen) {
+		err = ErrMaxOpen
+		return
+	}
+	oc := &OClient{
+		lock:    new(sync.RWMutex),
+		inUsing: false,
+		alive:   true,
+		created: time.Now(),
+		op:      o,
+	}
+	oc.Client, err = ic.NewHTTPClient(o.opt.HttpConf)
+	if err != nil {
+		return
+	}
+	select {
+	case o.pool <- oc:
+		o.currentOpen++
+	default:
+	}
 	return
 }
 
 func (o *OPool) getOrCreateOne() (oc *OClient, err error) {
 	select {
 	case oc = <-o.pool:
-		if err = o.ping(oc); err != nil {
+		err = o.ping(oc)
+		return
+	default:
+		if err = o.newClient(); err != nil {
 			return
 		}
+	}
+
+	select {
+	case oc = <-o.pool:
 	case <-time.After(o.opt.GetTimeout):
-		o.lock.Lock()
-		defer o.lock.Unlock()
-		if o.currentOpen >= int64(o.opt.MaxOpen) {
-			err = ErrMaxOpen
-			return
-		}
-		oc = &OClient{
-			lock:    new(sync.RWMutex),
-			inUsing: true,
-			alive:   true,
-			created: time.Now(),
-			op:      o,
-		}
-		oc.Client, err = ic.NewHTTPClient(o.opt.HttpConf)
-		if err != nil {
-			return
-		}
-		o.currentOpen++
+		err = ErrTimeout
+		return
 	}
 	return
 }
@@ -134,15 +152,15 @@ func (o *OClient) GetInfluxClient() ic.Client {
 
 //Release ...
 func (o *OClient) Release() {
-	if o == nil {
-		return
-	}
+	o.lock.Lock()
+	defer o.lock.Unlock()
 	if !o.alive {
 		return
 	}
-	o.lock.Lock()
+	if !o.inUsing {
+		return
+	}
 	o.inUsing = false
-	o.lock.Unlock()
 
 	select {
 	case o.op.pool <- o:

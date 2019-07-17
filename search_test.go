@@ -22,13 +22,13 @@ func Test_Query(t *testing.T) {
 }
 
 func Test_concurrent_Query(t *testing.T) {
-	ats := 100000
+	ats := 200
 	wg := new(sync.WaitGroup)
 	for i := 0; i < ats; i++ {
-		a := i
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
+			//log.Println("current num", testGlobalEngine.pool.CurrentOpen())
 			//str := `DROP SERIES FROM "user"`
 			str := `SELECT * FROM "user" ORDER BY "time" DESC LIMIT 2 OFFSET 0`
 			_, err := testGlobalEngine.DB("db1").Query(str)
@@ -36,11 +36,10 @@ func Test_concurrent_Query(t *testing.T) {
 				log.Println(err)
 				return
 			}
-			fmt.Printf("run time %d\n", a)
-			log.Println("current num", testGlobalEngine.pool.CurrentOpen())
 		}()
 	}
 	wg.Wait()
+	log.Println("G current num", testGlobalEngine.pool.CurrentOpen())
 }
 
 func Test_Drop(t *testing.T) {
