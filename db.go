@@ -181,9 +181,6 @@ func bindBean(item *reflect.Value, row []interface{}, indexMap map[string]int) e
 		fieldName := LintGonicMapper.Obj2Table(field.Name)
 		tStr := field.Tag.Get(TAGKey)
 
-		if len(tStr) == 0 {
-			continue
-		}
 		tags := splitTag(tStr)
 		if tags[0] == "-" {
 			continue
