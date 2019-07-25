@@ -181,7 +181,7 @@ func bindBean(item *reflect.Value, row []interface{}, indexMap map[string]int) e
 		tStr := field.Tag.Get(TAGKey)
 		if reflect.Indirect(fVal).Kind() == reflect.Struct && len(tStr) == 0 && field.Anonymous {
 			if err := bindBean(&fVal, row, indexMap); err != nil {
-				return fmt.Errorf(" field=>[%s]:inner bindBean error:%s", field.Name, err.Error())
+				return fmt.Errorf("inner bindBean error:%s", err.Error())
 			}
 			continue
 		}
@@ -202,15 +202,6 @@ func bindBean(item *reflect.Value, row []interface{}, indexMap map[string]int) e
 			fVal = reflect.Indirect(fVal)
 			if err := StringVal(ToStr(setVV)).MapInterfaceToStruct(&fVal); err != nil {
 				return err
-			}
-			continue
-		}
-		// extends
-		if _, ok := tagMap["extends"]; ok {
-			extendVal := reflect.New(fVal.Type()).Elem()
-			if err := bindBean(&extendVal, row, indexMap); err != nil {
-				return fmt.Errorf(" extends field=>[%s]:type is:%s;inner bindBean error:%s",
-					fVal.Type().Name(), field.Name, err.Error())
 			}
 			continue
 		}

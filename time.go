@@ -25,7 +25,7 @@ type JSONTime time.Time
 
 //FromDB ...
 func (p *JSONTime) FromDB(data []byte) error {
-	timeStd, _ := time.ParseInLocation(time.RFC3339Nano, string(data), time.Local)
+	timeStd, _ := time.ParseInLocation(Custom, string(data), time.Local)
 	*p = JSONTime(timeStd)
 	return nil
 }
@@ -107,8 +107,22 @@ func (p JSONTime) String() string {
 	return (&p).Convert2Time().Format(Custom)
 }
 
+//Addr ...
+func (p JSONTime) Addr() *JSONTime {
+	return &p
+}
+
 //ToDatetime ...
 func ToDatetime(in string) (JSONTime, error) {
 	out, err := time.ParseInLocation(Custom, in, time.Local)
 	return JSONTime(out), err
+}
+
+//Must2JSONTimeAddr maybe panic
+func Must2JSONTimeAddr(in string) *JSONTime {
+	j, err := ToDatetime(in)
+	if err != nil {
+		panic(err)
+	}
+	return &j
 }

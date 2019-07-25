@@ -228,9 +228,10 @@ func (s StringVal) MapInterfaceToStruct(dstVal *reflect.Value) (err error) {
 				return
 			}
 		}
+	case interface{}:
+		return
 	default:
-		return fmt.Errorf("unsupported type;type is :%s;value is :%#v",
-			dstVal.Type().String(), *dstVal)
+		return fmt.Errorf("unsupported type: %s", dstVal.Type().String())
 	}
 	return
 }
