@@ -180,20 +180,17 @@ func bindBean(item *reflect.Value, row []interface{}, indexMap map[string]int) e
 		fVal = v.Field(i)
 		fieldName := LintGonicMapper.Obj2Table(field.Name)
 		tStr := field.Tag.Get(TAGKey)
-
-		tags := splitTag(tStr)
-		if tags[0] == "-" {
-			continue
-		}
-
 		if (reflect.Indirect(fVal).Kind() == reflect.Struct && len(tStr) == 0) || field.Anonymous {
 			if err := bindBean(&fVal, row, indexMap); err != nil {
 				return fmt.Errorf("[%s]:inner bindBean error:%s", field.Name, err.Error())
 			}
 			continue
 		}
-
+		tags := splitTag(tStr)
 		if len(tags) == 0 {
+			continue
+		}
+		if tags[0] == "-" {
 			continue
 		}
 
