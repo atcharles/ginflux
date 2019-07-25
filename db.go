@@ -208,7 +208,7 @@ func bindBean(item *reflect.Value, row []interface{}, indexMap map[string]int) e
 
 		if _, ok := tagMap[TAG]; ok {
 			fVal = reflect.Indirect(fVal)
-			if err := StringVal(setVV.(string)).Bind(&fVal); err != nil {
+			if err := StringVal(ToStr(setVV)).Bind(&fVal); err != nil {
 				return err
 			}
 			continue
@@ -224,7 +224,7 @@ func bindBean(item *reflect.Value, row []interface{}, indexMap map[string]int) e
 		}
 		switch val := fVal.Interface().(type) {
 		case Conversion:
-			if err := val.FromDB(StringToBytes(setVV.(string))); err != nil {
+			if err := val.FromDB(StringToBytes(ToStr(setVV))); err != nil {
 				return err
 			}
 		default:
