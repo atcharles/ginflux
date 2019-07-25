@@ -199,7 +199,6 @@ func bindBean(item *reflect.Value, row []interface{}, indexMap map[string]int) e
 		}
 		setVV := row[indexMap[fieldName]]
 		if !fVal.CanSet() {
-			//fmt.Printf("field:%s cannot set value\n", field.Name)
 			continue
 		}
 		if _, ok := tagMap[FieldJSON]; ok {

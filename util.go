@@ -225,7 +225,8 @@ func (s StringVal) MapInterfaceToStruct(dstVal *reflect.Value) (err error) {
 		ok           bool
 	)
 	if interfaceMap, ok = vv.(map[string]interface{}); !ok {
-		return fmt.Errorf("type of value is not map[string]interface{}")
+		return fmt.Errorf("type of value is not map[string]interface{};type is :%s;value is :%#v",
+			dstVal.Type().String(), *dstVal)
 	}
 	for key, value := range interfaceMap {
 		fieldValue := dstVal.FieldByName(key)
