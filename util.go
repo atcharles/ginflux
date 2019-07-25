@@ -220,19 +220,17 @@ func (s StringVal) MapInterfaceToStruct(dstVal *reflect.Value) (err error) {
 	if err = json.Unmarshal(StringToBytes(string(s)), &vv); err != nil {
 		return
 	}
-	var (
-		interfaceMap map[string]interface{}
-		ok           bool
-	)
-	if interfaceMap, ok = vv.(map[string]interface{}); !ok {
-		return fmt.Errorf("type of value is not map[string]interface{};type is :%s;value is :%#v",
-			dstVal.Type().String(), *dstVal)
-	}
-	for key, value := range interfaceMap {
-		fieldValue := dstVal.FieldByName(key)
-		if err = StringVal(ToStr(value)).Bind(&fieldValue); err != nil {
-			return
+	switch vvBean := vv.(type) {
+	case map[string]interface{}:
+		for key, value := range vvBean {
+			fieldValue := dstVal.FieldByName(key)
+			if err = StringVal(ToStr(value)).Bind(&fieldValue); err != nil {
+				return
+			}
 		}
+	default:
+		return fmt.Errorf("unsupported type;type is :%s;value is :%#v",
+			dstVal.Type().String(), *dstVal)
 	}
 	return
 }

@@ -182,7 +182,7 @@ func bindBean(item *reflect.Value, row []interface{}, indexMap map[string]int) e
 		tStr := field.Tag.Get(TAGKey)
 		if (reflect.Indirect(fVal).Kind() == reflect.Struct && len(tStr) == 0) || field.Anonymous {
 			if err := bindBean(&fVal, row, indexMap); err != nil {
-				return fmt.Errorf("[%s]:inner bindBean error:%s", field.Name, err.Error())
+				return fmt.Errorf(" field=>[%s]:inner bindBean error:%s", field.Name, err.Error())
 			}
 			continue
 		}
@@ -229,6 +229,10 @@ func bindBean(item *reflect.Value, row []interface{}, indexMap map[string]int) e
 		case Conversion:
 			if err := val.FromDB(StringToBytes(setVV.(string))); err != nil {
 				return err
+			}
+		case interface{}:
+			if err := bindBean(&fVal, row, indexMap); err != nil {
+				return fmt.Errorf(" field=>[%s]:inner bindBean error:%s", field.Name, err.Error())
 			}
 		default:
 			fVal = reflect.Indirect(fVal)
