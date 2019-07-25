@@ -191,7 +191,7 @@ func bindBean(item *reflect.Value, row []interface{}, indexMap map[string]int) e
 
 		if (reflect.Indirect(fVal).Kind() == reflect.Struct && len(tStr) == 0) || field.Anonymous {
 			if err := bindBean(&fVal, row, indexMap); err != nil {
-				return fmt.Errorf("inner bindBean error:%s", err.Error())
+				return fmt.Errorf("[%s]:inner bindBean error:%s", field.Name, err.Error())
 			}
 			continue
 		}
