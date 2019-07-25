@@ -169,7 +169,11 @@ func bindBean(item *reflect.Value, row []interface{}, indexMap map[string]int) e
 		field := v.Type().Field(i)
 		var fVal reflect.Value
 
-		if field.Type.Kind() == reflect.Ptr && v.Field(i).CanSet() {
+		if !v.Field(i).CanSet() {
+			continue
+		}
+
+		if field.Type.Kind() == reflect.Ptr {
 			v.Field(i).Set(reflect.New(field.Type.Elem()))
 		}
 
