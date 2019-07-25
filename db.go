@@ -209,7 +209,8 @@ func bindBean(item *reflect.Value, row []interface{}, indexMap map[string]int) e
 		if _, ok := tagMap["extends"]; ok {
 			extendVal := reflect.New(fVal.Type()).Elem()
 			if err := bindBean(&extendVal, row, indexMap); err != nil {
-				return fmt.Errorf(" field=>[%s]:inner bindBean error:%s", field.Name, err.Error())
+				return fmt.Errorf(" extends field=>[%s]:type is:%s;inner bindBean error:%s",
+					fVal.Type().Name(), field.Name, err.Error())
 			}
 			continue
 		}
