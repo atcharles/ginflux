@@ -168,7 +168,7 @@ func bindBean(item *reflect.Value, row []interface{}, indexMap map[string]int) e
 	for i := 0; i < v.NumField(); i++ {
 		field := v.Type().Field(i)
 		var fVal reflect.Value
-		if field.Type.Kind() == reflect.Ptr {
+		if field.Type.Kind() == reflect.Ptr && v.Field(i).CanSet() {
 			v.Field(i).Set(reflect.New(field.Type.Elem()))
 		}
 		fVal = v.Field(i)
