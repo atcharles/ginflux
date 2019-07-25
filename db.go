@@ -167,17 +167,16 @@ func bindBean(item *reflect.Value, row []interface{}, indexMap map[string]int) e
 	v := reflect.Indirect(*item)
 	for i := 0; i < v.NumField(); i++ {
 		field := v.Type().Field(i)
-		var fVal reflect.Value
+		fVal := v.Field(i)
 
-		if !v.Field(i).CanSet() {
+		if !fVal.CanSet() {
 			continue
 		}
 
 		if field.Type.Kind() == reflect.Ptr {
-			v.Field(i).Set(reflect.New(field.Type.Elem()))
+			fVal.Set(reflect.New(field.Type.Elem()))
 		}
 
-		fVal = v.Field(i)
 		fieldName := LintGonicMapper.Obj2Table(field.Name)
 		tStr := field.Tag.Get(TAGKey)
 		if (reflect.Indirect(fVal).Kind() == reflect.Struct && len(tStr) == 0) || field.Anonymous {
@@ -199,9 +198,6 @@ func bindBean(item *reflect.Value, row []interface{}, indexMap map[string]int) e
 			fieldName = name
 		}
 		setVV := row[indexMap[fieldName]]
-		if !fVal.CanSet() {
-			continue
-		}
 		if _, ok := tagMap[FieldJSON]; ok {
 			fVal = reflect.Indirect(fVal)
 			if err := StringVal(ToStr(setVV)).MapInterfaceToStruct(&fVal); err != nil {
@@ -209,6 +205,14 @@ func bindBean(item *reflect.Value, row []interface{}, indexMap map[string]int) e
 			}
 			continue
 		}
+		// extends
+		if _, ok := tagMap["extends"]; ok {
+			if err := bindBean(&fVal, row, indexMap); err != nil {
+				return fmt.Errorf(" field=>[%s]:inner bindBean error:%s", field.Name, err.Error())
+			}
+			continue
+		}
+
 		if _, ok := tagMap[TAG]; ok {
 			fVal = reflect.Indirect(fVal)
 			if err := StringVal(setVV.(string)).Bind(&fVal); err != nil {
@@ -229,10 +233,6 @@ func bindBean(item *reflect.Value, row []interface{}, indexMap map[string]int) e
 		case Conversion:
 			if err := val.FromDB(StringToBytes(setVV.(string))); err != nil {
 				return err
-			}
-		case interface{}:
-			if err := bindBean(&fVal, row, indexMap); err != nil {
-				return fmt.Errorf(" field=>[%s]:inner bindBean error:%s", field.Name, err.Error())
 			}
 		default:
 			fVal = reflect.Indirect(fVal)
