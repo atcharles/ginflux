@@ -209,11 +209,17 @@ func (s StringVal) Bind(fieldValue *reflect.Value) (err error) {
 	case reflect.String:
 		fieldValue.SetString(string(s))
 	default:
-		err = s.MapInterfaceToStruct(fieldValue)
+		val := reflect.Indirect(*fieldValue)
+		b1 := reflect.New(val.Type()).Interface()
+		if err = json.Unmarshal([]byte(string(s)), &b1); err != nil {
+			return
+		}
+		fieldValue.Set(reflect.ValueOf(b1).Elem())
 	}
 	return
 }
 
+//Deprecated
 //MapInterfaceToStruct ...
 func (s StringVal) MapInterfaceToStruct(dstVal *reflect.Value) (err error) {
 	vv := dstVal.Interface()
