@@ -209,12 +209,7 @@ func (s StringVal) Bind(fieldValue *reflect.Value) (err error) {
 	case reflect.String:
 		fieldValue.SetString(string(s))
 	default:
-		val := reflect.Indirect(*fieldValue)
-		b1 := reflect.New(val.Type()).Interface()
-		if err = json.Unmarshal([]byte(string(s)), &b1); err != nil {
-			return
-		}
-		fieldValue.Set(reflect.ValueOf(b1).Elem())
+		err = unmarshalJSON(string(s), fieldValue)
 	}
 	return
 }
@@ -239,5 +234,16 @@ func (s StringVal) MapInterfaceToStruct(dstVal *reflect.Value) (err error) {
 	default:
 		return fmt.Errorf("unsupported type: %s", dstVal.Type().String())
 	}
+	return
+}
+
+func unmarshalJSON(str string, fVal *reflect.Value) (err error) {
+	val := reflect.Indirect(*fVal)
+	b1 := reflect.New(val.Type()).Interface()
+	err = json.Unmarshal([]byte(str), b1)
+	if err != nil {
+		return err
+	}
+	val.Set(reflect.ValueOf(b1).Elem())
 	return
 }
