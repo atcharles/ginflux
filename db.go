@@ -205,11 +205,7 @@ func bindBean(item *reflect.Value, row []interface{}, indexMap map[string]int) e
 			if err != nil {
 				return err
 			}
-			if v.Type().Field(i).Type.Kind() == reflect.Ptr {
-				v.Field(i).Set(reflect.ValueOf(b1))
-			} else {
-				v.Field(i).Set(reflect.ValueOf(b1).Elem())
-			}
+			fVal.Set(reflect.ValueOf(b1).Elem())
 			continue
 		}
 
