@@ -199,8 +199,7 @@ func bindBean(item *reflect.Value, row []interface{}, indexMap map[string]int) e
 		}
 		setVV := row[indexMap[fieldName]]
 		if _, ok := tagMap[FieldJSON]; ok {
-			fVal = reflect.Indirect(fVal)
-			if err := StringVal(ToStr(setVV)).MapInterfaceToStruct(&fVal); err != nil {
+			if err := unmarshalJSON(ToStr(setVV), &fVal); err != nil {
 				return err
 			}
 			continue
