@@ -241,6 +241,9 @@ func (s StringVal) MapInterfaceToStruct(dstVal *reflect.Value) (err error) {
 }
 
 func unmarshalJSON(str string, fVal *reflect.Value) (err error) {
+	if len(str) == 0 {
+		return
+	}
 	val := reflect.Indirect(*fVal)
 	b1 := reflect.New(val.Type()).Interface()
 	err = json.Unmarshal([]byte(str), b1)
