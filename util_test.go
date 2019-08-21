@@ -23,3 +23,8 @@ type TBA struct {
 	AA string
 	BB int
 }
+
+func TestToStr(t *testing.T) {
+	var b interface{}
+	fmt.Printf("%#v\n ", ToStr(b))
+}

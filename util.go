@@ -166,6 +166,9 @@ func ToStr(value interface{}, args ...int) (s string) {
 		b, _ := v.ToDB()
 		s = string(b)
 	default:
+		if v == nil {
+			return ""
+		}
 		b, _ := json.Marshal(v)
 		s = BytesToString(b)
 	}
