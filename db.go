@@ -146,7 +146,16 @@ func bindSlice(rp *ic.Response, bean interface{}) error {
 	for i, column := range columns {
 		indexMap[column] = i
 	}
-	rpVs := rp.Results[0].Series[0].Values
+	var rpVs [][]interface{}
+	series := rp.Results[0].Series
+	switch len(series) {
+	case 0:
+		return ErrEmpty
+	default:
+		for _, ss := range series {
+			rpVs = append(rpVs, ss.Values...)
+		}
+	}
 	beans := reflect.MakeSlice(beanValue.Type(), 0, len(rpVs))
 	vT := beanValue.Type().Elem()
 	if vT.Kind() == reflect.Ptr {
