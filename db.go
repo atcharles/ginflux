@@ -146,7 +146,9 @@ func bindSlice(rp *ic.Response, bean interface{}) error {
 	var (
 		columns []string
 		rpVs    [][]interface{}
+		tags    map[string]string
 	)
+	tags = rp.Results[0].Series[0].Tags
 	columns = rp.Results[0].Series[0].Columns
 	for i, column := range columns {
 		indexMap[column] = i
@@ -161,7 +163,7 @@ func bindSlice(rp *ic.Response, bean interface{}) error {
 	}
 	for _, sl := range rpVs {
 		b1 := reflect.New(vT)
-		if err := bindBean(&b1, sl, indexMap); err != nil {
+		if err := bindBean(&b1, sl, indexMap, tags); err != nil {
 			return err
 		}
 		beans = reflect.Append(beans, b1)
@@ -170,7 +172,7 @@ func bindSlice(rp *ic.Response, bean interface{}) error {
 	return nil
 }
 
-func bindBean(item *reflect.Value, row []interface{}, indexMap map[string]int) error {
+func bindBean(item *reflect.Value, row []interface{}, indexMap map[string]int, tagsMap map[string]string) error {
 	v := reflect.Indirect(*item)
 	for i := 0; i < v.NumField(); i++ {
 		field := v.Type().Field(i)
@@ -187,7 +189,7 @@ func bindBean(item *reflect.Value, row []interface{}, indexMap map[string]int) e
 		fieldName := LintGonicMapper.Obj2Table(field.Name)
 		tStr := field.Tag.Get(TAGKey)
 		if (reflect.Indirect(fVal).Kind() == reflect.Struct && len(tStr) == 0) || field.Anonymous {
-			if err := bindBean(&fVal, row, indexMap); err != nil {
+			if err := bindBean(&fVal, row, indexMap, tagsMap); err != nil {
 				return fmt.Errorf("inner bindBean error:%s", err.Error())
 			}
 			continue
@@ -199,6 +201,17 @@ func bindBean(item *reflect.Value, row []interface{}, indexMap map[string]int) e
 		if tags[0] == "-" {
 			continue
 		}
+		//------------------------------ [START] ------------------------------
+		//2019-08-21 17:05:    Author BY: charles
+		//绑定tag
+		for key, value := range tagsMap {
+			if key == fieldName {
+				if err := StringVal(value).Bind(&fVal); err != nil {
+					return err
+				}
+			}
+		}
+		//------------------------------ [END] --------------------------------
 		tagMap := tagMap(tags)
 		if name, ok := tagMap[FieldName]; ok {
 			fieldName = name
