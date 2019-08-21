@@ -204,6 +204,10 @@ func bindBean(item *reflect.Value, row []interface{}, indexMap map[string]int) e
 		if name, ok := tagMap[FieldName]; ok {
 			fieldName = name
 		}
+		idxMap := indexMap[fieldName]
+		if idxMap == 0 {
+			continue
+		}
 		setVV := row[indexMap[fieldName]]
 		if _, ok := tagMap[FieldJSON]; ok {
 			if err := unmarshalJSON(ToStr(setVV), &fVal); err != nil {
@@ -211,7 +215,6 @@ func bindBean(item *reflect.Value, row []interface{}, indexMap map[string]int) e
 			}
 			continue
 		}
-
 		if _, ok := tagMap[TAG]; ok {
 			fVal = reflect.Indirect(fVal)
 			if err := StringVal(ToStr(setVV)).Bind(&fVal); err != nil {
