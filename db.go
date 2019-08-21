@@ -139,22 +139,20 @@ func bindSlice(rp *ic.Response, bean interface{}) error {
 	if len(rp.Results) == 0 {
 		return fmt.Errorf("没有返回的数据:服务端错误 %s", rp.Error().Error())
 	}
-	if len(rp.Results[0].Series) == 0 {
+	series := rp.Results[0].Series
+	if len(series) == 0 {
 		return ErrEmpty
 	}
-	columns := rp.Results[0].Series[0].Columns
+	var (
+		columns []string
+		rpVs    [][]interface{}
+	)
+	columns = rp.Results[0].Series[0].Columns
 	for i, column := range columns {
 		indexMap[column] = i
 	}
-	var rpVs [][]interface{}
-	series := rp.Results[0].Series
-	switch len(series) {
-	case 0:
-		return ErrEmpty
-	default:
-		for _, ss := range series {
-			rpVs = append(rpVs, ss.Values...)
-		}
+	for _, ss := range series {
+		rpVs = append(rpVs, ss.Values...)
 	}
 	beans := reflect.MakeSlice(beanValue.Type(), 0, len(rpVs))
 	vT := beanValue.Type().Elem()
