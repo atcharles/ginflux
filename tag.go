@@ -1,7 +1,6 @@
 package ginflux
 
 import (
-	"encoding/json"
 	"go/ast"
 	"reflect"
 	"strings"
@@ -133,8 +132,7 @@ func (ip *innerPoint) parseBeanTags(bean interface{}) {
 			ip.tagTime = obj2Time(v.Field(i).Interface())
 		}
 		if _, ok := tagMap[FieldJSON]; ok {
-			bts, _ := json.Marshal(v.Field(i).Interface())
-			ip.fieldsMap[fieldName] = BytesToString(bts)
+			ip.fieldsMap[fieldName] = ToStr(v.Field(i).Interface())
 			continue
 		}
 	}
@@ -167,8 +165,7 @@ func fieldValue(field interface{}) (rs interface{}) {
 		b, _ := val.ToDB()
 		rs = BytesToString(b)
 	default:
-		b, _ := json.Marshal(val)
-		rs = BytesToString(b)
+		rs = ToStr(val)
 	}
 	return rs
 }

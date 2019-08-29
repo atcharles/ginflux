@@ -170,8 +170,17 @@ func ToStr(value interface{}, args ...int) (s string) {
 		if v == nil {
 			return ""
 		}
-		b, _ := json.Marshal(v)
-		s = BytesToString(b)
+		vv := reflect.Indirect(reflect.ValueOf(v))
+		switch vv.Type().Kind() {
+		case reflect.Struct, reflect.Slice, reflect.Map, reflect.Interface:
+			b, e := json.Marshal(v)
+			if e != nil {
+				panic("写入influx: json 序列化错误: " + e.Error())
+			}
+			s = BytesToString(b)
+		default:
+			s = fmt.Sprintf("%v", v)
+		}
 	}
 	return s
 }
