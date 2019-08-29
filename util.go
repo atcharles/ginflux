@@ -1,6 +1,7 @@
 package ginflux
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"reflect"
