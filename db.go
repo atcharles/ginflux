@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"strconv"
 	"time"
 
 	ic "github.com/influxdata/influxdb1-client/v2"
@@ -215,6 +216,9 @@ func bindBean(item *reflect.Value, row []interface{}, indexMap map[string]int, t
 		if name, ok := tagMap[FieldName]; ok {
 			fieldName = name
 		}
+		if _, ok := tagMap[TAGTime]; ok {
+			fieldName = "time"
+		}
 		idx, ok := indexMap[fieldName]
 		if !ok {
 			continue
@@ -235,7 +239,8 @@ func bindBean(item *reflect.Value, row []interface{}, indexMap map[string]int, t
 		}
 		if _, ok := tagMap[TAGTime]; ok {
 			fVal = reflect.Indirect(fVal)
-			tm1, _ := time.Parse(time.RFC3339Nano, ToStr(row[indexMap["time"]]))
+			ns, _ := strconv.ParseInt(ToStr(row[indexMap["time"]]), 10, 64)
+			tm1 := time.Unix(int64(time.Duration(ns)/time.Second), int64(time.Duration(ns)%time.Second))
 			fVal.Set(reflect.ValueOf(tm1.Local()).Convert(fVal.Type()))
 			continue
 		}
