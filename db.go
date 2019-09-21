@@ -235,10 +235,8 @@ func bindBean(item *reflect.Value, row []interface{}, indexMap map[string]int, t
 		}
 		if _, ok := tagMap[TAGTime]; ok {
 			fVal = reflect.Indirect(fVal)
-			timeVal := row[indexMap["time"]]
-			timeStr := ToStr(timeVal)
-			tm1, _ := time.Parse(time.RFC3339Nano, timeStr)
-			fVal.Set(reflect.ValueOf(tm1).Convert(fVal.Type()))
+			tm1, _ := time.Parse(time.RFC3339Nano, ToStr(row[indexMap["time"]]))
+			fVal.Set(reflect.ValueOf(tm1.Local()).Convert(fVal.Type()))
 			//ns, _ := strconv.ParseInt(timeStr, 10, 64)
 			//tm1 := time.Unix(int64(time.Duration(ns)/time.Second), int64(time.Duration(ns)%time.Second))
 			//fVal.Set(reflect.ValueOf(tm1).Convert(fVal.Type()))
