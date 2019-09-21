@@ -237,9 +237,6 @@ func bindBean(item *reflect.Value, row []interface{}, indexMap map[string]int, t
 			fVal = reflect.Indirect(fVal)
 			tm1, _ := time.Parse(time.RFC3339Nano, ToStr(row[indexMap["time"]]))
 			fVal.Set(reflect.ValueOf(tm1.Local()).Convert(fVal.Type()))
-			//ns, _ := strconv.ParseInt(timeStr, 10, 64)
-			//tm1 := time.Unix(int64(time.Duration(ns)/time.Second), int64(time.Duration(ns)%time.Second))
-			//fVal.Set(reflect.ValueOf(tm1).Convert(fVal.Type()))
 			continue
 		}
 		switch val := fVal.Interface().(type) {
