@@ -122,14 +122,14 @@ type (
 func Test_01(t *testing.T) {
 	beans := make([]*GRoomOrder, 0)
 	sqlStr := `select sum("bet_money") as bet_money,
-sum("bonus") as bonus,sum("win_money") as win_money from "g_room_order"
- where  "room_id" = '1'  group by "room_id","gid","uid" slimit 100`
+sum("bonus") as bonus,sum("win_money") as win_money from "g_room_order_history"
+ where  "room_id" = '1'  group by "room_id","gid","uid" slimit 1`
 	s, err := testGlobalEngine.DB("BusinessDB").Query(sqlStr, &beans)
-	fmt.Printf("%#v\n,%#v\n", s, err)
+	_ = fmt.Sprintf("%#v\n,%#v\n", s, err)
 	for _, b := range beans {
 		fmt.Printf("%#v\n", b)
-		fmt.Printf("%#v\n", b.Contents)
-		fmt.Printf("%#v\n", b.Created.String())
+		//fmt.Printf("%#v\n", b.Contents)
+		//fmt.Printf("%#v\n", b.Created.String())
 	}
 }
 

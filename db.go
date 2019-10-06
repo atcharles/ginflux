@@ -135,7 +135,6 @@ func bindSlice(rp *ic.Response, bean interface{}) error {
 		panic("need pointer for bind bean")
 	}
 	beanValue := reflect.Indirect(vv)
-	var indexMap = make(map[string]int)
 	if len(rp.Results) == 0 {
 		return fmt.Errorf("没有返回的数据:服务端错误 %s", rp.Error().Error())
 	}
@@ -143,36 +142,37 @@ func bindSlice(rp *ic.Response, bean interface{}) error {
 	if len(series) == 0 {
 		return ErrEmpty
 	}
-	var (
-		columns []string
-		rpVs    [][]interface{}
-		tags    map[string]string
-	)
-	tags = rp.Results[0].Series[0].Tags
-	columns = rp.Results[0].Series[0].Columns
-	for i, column := range columns {
-		indexMap[column] = i
+	//将series分割成数组
+	valArr := make([]map[string]interface{}, 0)
+	for _, sv := range series {
+		for _, vs := range sv.Values {
+			var maps = make(map[string]interface{})
+			for i1, col := range sv.Columns {
+				maps[col] = vs[i1]
+			}
+			for key, value := range sv.Tags {
+				maps[key] = value
+			}
+			valArr = append(valArr, maps)
+		}
 	}
-	for _, ss := range series {
-		rpVs = append(rpVs, ss.Values...)
-	}
-	beans := reflect.MakeSlice(beanValue.Type(), 0, len(rpVs))
+	beans := reflect.MakeSlice(beanValue.Type(), 0, len(valArr))
 	vT := beanValue.Type().Elem()
 	if vT.Kind() == reflect.Ptr {
 		vT = vT.Elem()
 	}
-	for _, sl := range rpVs {
+	for _, value := range valArr {
 		b1 := reflect.New(vT)
-		if err := bindBean(&b1, sl, indexMap, tags); err != nil {
+		beans = reflect.Append(beans, b1)
+		if err := bindBean(&b1, value); err != nil {
 			return err
 		}
-		beans = reflect.Append(beans, b1)
 	}
 	beanValue.Set(beans)
 	return nil
 }
 
-func bindBean(item *reflect.Value, row []interface{}, indexMap map[string]int, tagsMap map[string]string) error {
+func bindBean(item *reflect.Value, row map[string]interface{}) error {
 	v := reflect.Indirect(*item)
 	for i := 0; i < v.NumField(); i++ {
 		field := v.Type().Field(i)
@@ -189,7 +189,7 @@ func bindBean(item *reflect.Value, row []interface{}, indexMap map[string]int, t
 		fieldName := LintGonicMapper.Obj2Table(field.Name)
 		tStr := field.Tag.Get(TAGKey)
 		if (reflect.Indirect(fVal).Kind() == reflect.Struct && len(tStr) == 0) || field.Anonymous {
-			if err := bindBean(&fVal, row, indexMap, tagsMap); err != nil {
+			if err := bindBean(&fVal, row); err != nil {
 				return fmt.Errorf("inner bindBean error:%s", err.Error())
 			}
 			continue
@@ -201,17 +201,6 @@ func bindBean(item *reflect.Value, row []interface{}, indexMap map[string]int, t
 		if tags[0] == "-" {
 			continue
 		}
-		//------------------------------ [START] ------------------------------
-		//2019-08-21 17:05:    Author BY: charles
-		//绑定tag
-		for key, value := range tagsMap {
-			if key == fieldName {
-				if err := StringVal(value).Bind(&fVal); err != nil {
-					return err
-				}
-			}
-		}
-		//------------------------------ [END] --------------------------------
 		tagMap := tagMap(tags)
 		if name, ok := tagMap[FieldName]; ok {
 			fieldName = name
@@ -219,11 +208,10 @@ func bindBean(item *reflect.Value, row []interface{}, indexMap map[string]int, t
 		if _, ok := tagMap[TAGTime]; ok {
 			fieldName = "time"
 		}
-		idx, ok := indexMap[fieldName]
+		setVV, ok := row[fieldName]
 		if !ok {
 			continue
 		}
-		setVV := row[idx]
 		if _, ok := tagMap[FieldJSON]; ok {
 			if err := unmarshalJSON(ToStr(setVV), &fVal); err != nil {
 				return err
@@ -239,7 +227,7 @@ func bindBean(item *reflect.Value, row []interface{}, indexMap map[string]int, t
 		}
 		if _, ok := tagMap[TAGTime]; ok {
 			fVal = reflect.Indirect(fVal)
-			ns, _ := strconv.ParseInt(ToStr(row[indexMap["time"]]), 10, 64)
+			ns, _ := strconv.ParseInt(ToStr(row["time"]), 10, 64)
 			tm1 := time.Unix(int64(time.Duration(ns)/time.Second), int64(time.Duration(ns)%time.Second))
 			fVal.Set(reflect.ValueOf(tm1.Local()).Convert(fVal.Type()))
 			continue
