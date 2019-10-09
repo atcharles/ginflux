@@ -32,6 +32,7 @@ func (s *Search) innerConditions(beans ...interface{}) *Search {
 }
 
 func (s *Search) queryDO(str string) *Search {
+	queryStringAddTz(&str)
 	s.query = ic.NewQuery(str, s.Database.name, "ns")
 	return s
 }

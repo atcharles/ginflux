@@ -3,6 +3,7 @@ package ginflux
 import (
 	"database/sql/driver"
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -11,7 +12,18 @@ const (
 	TimeZone = "Asia/Shanghai"
 	//Custom ...
 	Custom = "2006-01-02 15:04:05"
+
+	queryTz = "tz('Asia/Shanghai')"
 )
+
+//queryStringAddTz 查询字符串添加时区
+func queryStringAddTz(str *string) {
+	s := *str
+	if !strings.Contains(s, queryTz) {
+		s = s + " " + queryTz
+	}
+	str = &s
+}
 
 //SetTimeZone ...
 func SetTimeZone() {
