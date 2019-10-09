@@ -22,7 +22,7 @@ func queryStringAddTz(str *string) {
 	if !strings.Contains(s, queryTz) {
 		s = s + " " + queryTz
 	}
-	str = &s
+	*str = s
 }
 
 //SetTimeZone ...
