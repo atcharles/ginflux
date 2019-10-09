@@ -1,6 +1,8 @@
 package ginflux
 
 import (
+	"time"
+
 	ic "github.com/influxdata/influxdb1-client/v2"
 )
 
@@ -10,11 +12,11 @@ const Version = "v0.0.1"
 var (
 	DefOpts = Options{
 		HttpConf: ic.HTTPConfig{
-			Addr:               "http://192.168.0.201:9086",
+			Addr:               "http://127.0.0.1:18086",
 			Username:           "",
 			Password:           "",
 			UserAgent:          "",
-			Timeout:            0,
+			Timeout:            time.Second * 3,
 			InsecureSkipVerify: false,
 			TLSConfig:          nil,
 			Proxy:              nil,

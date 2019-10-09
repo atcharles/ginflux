@@ -6,6 +6,8 @@ import (
 	"log"
 	"sync"
 	"testing"
+
+	"github.com/davecgh/go-spew/spew"
 )
 
 func Test_Query(t *testing.T) {
@@ -146,3 +148,15 @@ type (
 		OpenTime JSONTime `json:"open_time"`
 	}
 )
+
+func Test01(t *testing.T) {
+	str := `select * from "g_room_order_history" where "uid"='56' and "gid"='4' order by time desc limit 0 offset 10 tz('Asia/Shanghai');`
+	beans := make([]*GRoomOrder, 0)
+	rst, err := testGlobalEngine.DB("BusinessDB").Query(str, &beans)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	spew.Dump(rst.Result.Results[0])
+	fmt.Println(rst.Result.Results[0].Series[0].Values[0][4])
+}

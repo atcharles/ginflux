@@ -176,7 +176,6 @@ func bindBean(item *reflect.Value, row map[string]interface{}) error {
 	for i := 0; i < v.NumField(); i++ {
 		field := v.Type().Field(i)
 		fVal := v.Field(i)
-
 		if !fVal.CanSet() {
 			continue
 		}
@@ -189,7 +188,7 @@ func bindBean(item *reflect.Value, row map[string]interface{}) error {
 		tStr := field.Tag.Get(TAGKey)
 		if (reflect.Indirect(fVal).Kind() == reflect.Struct && len(tStr) == 0) || field.Anonymous {
 			if err := bindBean(&fVal, row); err != nil {
-				return fmt.Errorf("inner bindBean error:%s", err.Error())
+				return fmt.Errorf("inner bindBean error:%s;hints:[%s]", err.Error(), field.Name)
 			}
 			continue
 		}
