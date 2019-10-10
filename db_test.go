@@ -197,8 +197,19 @@ func Test_03(t *testing.T) {
 }
 
 func Test_04(t *testing.T) {
+	db := "db1"
+	dr := "10d"
+	sdr := "1d"
+	_ = testGlobalEngine.SyncDB(RetentionPolicy{
+		DBName:        db,
+		RPName:        db + "_" + dr,
+		Duration:      dr,
+		Replication:   1,
+		ShardDuration: sdr,
+		Default:       true,
+	})
 	bean := &MsgHistory{
-		Created:      JSONTime(time.Now()).Addr(),
+		//Created:      JSONTime(time.Now()).Addr(),
 		From:         0,
 		FromNick:     "",
 		FromIco:      "",
@@ -218,5 +229,13 @@ func Test_04(t *testing.T) {
 			Data: []byte("\"tsa\""),
 		},
 	}
-	_ = testGlobalEngine.DB("db1").Insert(bean)
+	//循环100次,每次插入10000条
+	for i := 0; i < 100; i++ {
+		fmt.Printf("第[%d]次循环\n", i)
+		beans := make([]*MsgHistory, 0)
+		for a := 0; a < 10000; a++ {
+			beans = append(beans, bean)
+		}
+		_ = testGlobalEngine.DB(db).Insert(beans)
+	}
 }

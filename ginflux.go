@@ -12,7 +12,7 @@ const Version = "v0.0.1"
 var (
 	DefOpts = Options{
 		HttpConf: ic.HTTPConfig{
-			Addr:               "http://127.0.0.1:18086",
+			Addr:               "http://127.0.0.1:8086",
 			Username:           "",
 			Password:           "",
 			UserAgent:          "",

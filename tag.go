@@ -129,7 +129,9 @@ func (ip *innerPoint) parseBeanTags(bean interface{}) {
 			ip.fieldsMap[fieldName] = fieldValue(v.Field(i).Interface())
 		}
 		if _, ok := tagMap[TAGTime]; ok {
-			ip.tagTime = obj2Time(v.Field(i).Interface())
+			if !v.Field(i).IsNil() {
+				ip.tagTime = obj2Time(v.Field(i).Interface())
+			}
 		}
 		if _, ok := tagMap[FieldJSON]; ok {
 			ip.fieldsMap[fieldName] = ToStr(v.Field(i).Interface())
