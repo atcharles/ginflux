@@ -66,10 +66,22 @@ func (d *Database) scopeSearch() *Search {
 	return &Search{Database: d.clone()}
 }
 
-//Query ...
+//Query 查询时包裹时区
 func (d *Database) Query(str string, bean ...interface{}) (s *Search, err error) {
 	err = d.autoReleaseCallback(func(Database *Database) error {
 		s = Database.scopeSearch().queryDO(str).exec(bean...)
+		if s.Err != nil {
+			return s.Err
+		}
+		return s.Result.Error()
+	})
+	return
+}
+
+//QueryRaw 执行原始查询语句
+func (d *Database) QueryRaw(str string, bean ...interface{}) (s *Search, err error) {
+	err = d.autoReleaseCallback(func(Database *Database) error {
+		s = Database.scopeSearch().queryNew(str).exec(bean...)
 		if s.Err != nil {
 			return s.Err
 		}
