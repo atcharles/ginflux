@@ -11,5 +11,6 @@ type InterfaceGInflux interface {
 	Sync(db string, policy RetentionPolicy) (err error)
 	DB(dbName string) InterfaceGInflux
 	Insert(bean interface{}, bConf ...client.BatchPointsConfig) (err error)
-	Query(sqlStr string, beans ...interface{}) (err error)
+	Query(sqlStr string, beans ...interface{}) (rp *client.Response, err error)
+	QueryRaw(sqlStr string, beans ...interface{}) (rp *client.Response, err error)
 }

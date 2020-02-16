@@ -177,13 +177,18 @@ func (g *newGInflux) insert(bean interface{}, bConf ...client2.BatchPointsConfig
 
 //Query ...
 //if len(beans)>0 will exec bind
-func (g *newGInflux) Query(sqlStr string, beans ...interface{}) (err error) {
+func (g *newGInflux) Query(sqlStr string, beans ...interface{}) (rp *client2.Response, err error) {
+	queryStringAddTz(&sqlStr)
 	return g.query(sqlStr, beans...)
 }
-func (g *newGInflux) query(sqlStr string, beans ...interface{}) (err error) {
-	queryStringAddTz(&sqlStr)
+
+//QueryRaw ...
+func (g *newGInflux) QueryRaw(sqlStr string, beans ...interface{}) (rp *client2.Response, err error) {
+	return g.query(sqlStr, beans...)
+}
+func (g *newGInflux) query(sqlStr string, beans ...interface{}) (rp *client2.Response, err error) {
 	cq := client2.NewQuery(sqlStr, g.db, "ns")
-	rp, err := g.client.Query(cq)
+	rp, err = g.client.Query(cq)
 	if err != nil {
 		return
 	}
@@ -191,7 +196,8 @@ func (g *newGInflux) query(sqlStr string, beans ...interface{}) (err error) {
 		return
 	}
 	if len(beans) > 0 {
-		return bindSlice(rp, beans[0])
+		err = bindSlice(rp, beans[0])
+		return
 	}
 	return
 }
