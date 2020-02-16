@@ -36,6 +36,12 @@ func DefaultHTTPConfig() HTTPConfig {
 	}
 }
 
+//NewEngine ...
+func NewEngine() InterfaceGInflux {
+	g := &newGInflux{}
+	return g
+}
+
 type newGInflux struct {
 	client client2.Client
 
