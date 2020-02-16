@@ -25,11 +25,11 @@ type CacheMapper struct {
 }
 
 //NewCacheMapper ...
-func NewCacheMapper(mapper IMapper) *CacheMapper {
+/*func NewCacheMapper(mapper IMapper) *CacheMapper {
 	return &CacheMapper{oriMapper: mapper, obj2tableCache: make(map[string]string),
 		table2objCache: make(map[string]string),
 	}
-}
+}*/
 
 //Obj2Table ...
 func (m *CacheMapper) Obj2Table(o string) string {
@@ -248,9 +248,9 @@ func (mapper PrefixMapper) Table2Obj(name string) string {
 }
 
 //NewPrefixMapper ...
-func NewPrefixMapper(mapper IMapper, prefix string) PrefixMapper {
+/*func NewPrefixMapper(mapper IMapper, prefix string) PrefixMapper {
 	return PrefixMapper{mapper, prefix}
-}
+}*/
 
 //SuffixMapper provide suffix table name support
 type SuffixMapper struct {
@@ -269,6 +269,6 @@ func (mapper SuffixMapper) Table2Obj(name string) string {
 }
 
 //NewSuffixMapper ...
-func NewSuffixMapper(mapper IMapper, suffix string) SuffixMapper {
+/*func NewSuffixMapper(mapper IMapper, suffix string) SuffixMapper {
 	return SuffixMapper{mapper, suffix}
-}
+}*/

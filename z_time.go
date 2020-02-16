@@ -8,8 +8,6 @@ import (
 )
 
 const (
-	//TimeZone ...
-	TimeZone = "Asia/Shanghai"
 	//Custom ...
 	Custom = "2006-01-02 15:04:05"
 
@@ -23,14 +21,6 @@ func queryStringAddTz(str *string) {
 		s = s + " " + queryTz
 	}
 	*str = s
-}
-
-//SetTimeZone ...
-func SetTimeZone() {
-	lc, err := time.LoadLocation(TimeZone)
-	if err == nil {
-		time.Local = lc
-	}
 }
 
 //JSONTime ...
@@ -123,19 +113,4 @@ func (p JSONTime) String() string {
 //Addr ...
 func (p JSONTime) Addr() *JSONTime {
 	return &p
-}
-
-//ToDatetime ...
-func ToDatetime(in string) (JSONTime, error) {
-	out, err := time.ParseInLocation(Custom, in, time.Local)
-	return JSONTime(out), err
-}
-
-//Must2JSONTimeAddr maybe panic
-func Must2JSONTimeAddr(in string) *JSONTime {
-	j, err := ToDatetime(in)
-	if err != nil {
-		panic(err)
-	}
-	return &j
 }

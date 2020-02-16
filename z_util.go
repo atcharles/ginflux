@@ -8,15 +8,18 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"time"
 	"unsafe"
+
+	client2 "github.com/influxdata/influxdb1-client/v2"
 )
 
-// BytesToString convert []byte type to string type.
+//BytesToString convert []byte type to string type.
 func BytesToString(b []byte) string {
 	return *(*string)(unsafe.Pointer(&b))
 }
 
-// StringToBytes convert string type to []byte type.
+//StringToBytes convert string type to []byte type.
 // NOTE: panic if modify the member value of the []byte.
 func StringToBytes(s string) []byte {
 	sp := *(*[2]uintptr)(unsafe.Pointer(&s))
@@ -24,8 +27,8 @@ func StringToBytes(s string) []byte {
 	return *(*[]byte)(unsafe.Pointer(&bp))
 }
 
-// SnakeString converts the accepted string to a snake string (XxYy to xx_yy)
-func SnakeString(s string) string {
+//SnakeString converts the accepted string to a snake string (XxYy to xx_yy)
+/*func SnakeString(s string) string {
 	data := make([]byte, 0, len(s)*2)
 	j := false
 	for _, d := range StringToBytes(s) {
@@ -40,10 +43,10 @@ func SnakeString(s string) string {
 		data = append(data, d)
 	}
 	return strings.ToLower(BytesToString(data))
-}
+}*/
 
-// CamelString converts the accepted string to a camel string (xx_yy to XxYy)
-func CamelString(s string) string {
+//CamelString converts the accepted string to a camel string (xx_yy to XxYy)
+/*func CamelString(s string) string {
 	data := make([]byte, 0, len(s))
 	j := false
 	k := false
@@ -65,9 +68,9 @@ func CamelString(s string) string {
 		data = append(data, d)
 	}
 	return string(data[:])
-}
+}*/
 
-// ObjectName gets the type name of the object
+//ObjectName gets the type name of the object
 func ObjectName(obj interface{}) string {
 	v := reflect.ValueOf(obj)
 	t := v.Type()
@@ -102,8 +105,8 @@ func splitTag(tag string) (tags []string) {
 	return
 }
 
-// IsSliceContainsStr returns true if the string exists in given slice, ignore case.
-func IsSliceContainsStr(sl []string, str string) bool {
+//IsSliceContainsStr returns true if the string exists in given slice, ignore case.
+/*func IsSliceContainsStr(sl []string, str string) bool {
 	str = strings.ToLower(str)
 	for _, s := range sl {
 		if strings.ToLower(s) == str {
@@ -111,7 +114,7 @@ func IsSliceContainsStr(sl []string, str string) bool {
 		}
 	}
 	return false
-}
+}*/
 
 type argInt []int
 
@@ -227,29 +230,6 @@ func (s StringVal) Bind(fieldValue *reflect.Value) (err error) {
 	return
 }
 
-//Deprecated
-//MapInterfaceToStruct ...
-func (s StringVal) MapInterfaceToStruct(dstVal *reflect.Value) (err error) {
-	vv := dstVal.Interface()
-	if err = json.Unmarshal(StringToBytes(string(s)), &vv); err != nil {
-		return
-	}
-	switch vvBean := vv.(type) {
-	case map[string]interface{}:
-		for key, value := range vvBean {
-			fieldValue := dstVal.FieldByName(key)
-			if err = StringVal(ToStr(value)).Bind(&fieldValue); err != nil {
-				return
-			}
-		}
-	case interface{}:
-		return
-	default:
-		return fmt.Errorf("unsupported type: %s", dstVal.Type().String())
-	}
-	return
-}
-
 func unmarshalJSON(str string, fVal *reflect.Value) (err error) {
 	if len(str) == 0 {
 		return
@@ -262,4 +242,129 @@ func unmarshalJSON(str string, fVal *reflect.Value) (err error) {
 	}
 	val.Set(reflect.ValueOf(b1).Elem())
 	return
+}
+
+var (
+	//ErrEmpty ...
+	ErrEmpty = errors.New("empty")
+)
+
+func bindSlice(rp *client2.Response, bean interface{}) error {
+	if rp.Error() != nil {
+		return rp.Error()
+	}
+	vv := reflect.ValueOf(bean)
+	if vv.Kind() != reflect.Ptr {
+		panic("need pointer for bind bean")
+	}
+	beanValue := reflect.Indirect(vv)
+	if len(rp.Results) == 0 {
+		return fmt.Errorf("没有返回的数据:服务端错误 %s", rp.Error().Error())
+	}
+	series := rp.Results[0].Series
+	if len(series) == 0 {
+		return ErrEmpty
+	}
+	//将series分割成数组
+	valArr := make([]map[string]interface{}, 0)
+	for _, sv := range series {
+		for _, vs := range sv.Values {
+			var maps = make(map[string]interface{})
+			for i1, col := range sv.Columns {
+				maps[col] = vs[i1]
+			}
+			for key, value := range sv.Tags {
+				maps[key] = value
+			}
+			valArr = append(valArr, maps)
+		}
+	}
+	beans := reflect.MakeSlice(beanValue.Type(), 0, len(valArr))
+	vT := beanValue.Type().Elem()
+	if vT.Kind() == reflect.Ptr {
+		vT = vT.Elem()
+	}
+	for _, value := range valArr {
+		b1 := reflect.New(vT)
+		beans = reflect.Append(beans, b1)
+		if err := bindBean(&b1, value); err != nil {
+			return err
+		}
+	}
+	beanValue.Set(beans)
+	return nil
+}
+
+func bindBean(item *reflect.Value, row map[string]interface{}) error {
+	v := reflect.Indirect(*item)
+	for i := 0; i < v.NumField(); i++ {
+		field := v.Type().Field(i)
+		fVal := v.Field(i)
+		if !fVal.CanSet() {
+			continue
+		}
+
+		if field.Type.Kind() == reflect.Ptr {
+			fVal.Set(reflect.New(field.Type.Elem()))
+		}
+
+		fieldName := LintGonicMapper.Obj2Table(field.Name)
+		tStr := field.Tag.Get(TAGKey)
+		if (reflect.Indirect(fVal).Kind() == reflect.Struct && len(tStr) == 0) || field.Anonymous {
+			if err := bindBean(&fVal, row); err != nil {
+				return fmt.Errorf("inner bindBean error:%s;hints:[%s]", err.Error(), field.Name)
+			}
+			continue
+		}
+		tags := splitTag(tStr)
+		if len(tags) == 0 {
+			continue
+		}
+		if tags[0] == "-" {
+			continue
+		}
+		tagMap := tagMap(tags)
+		if name, ok := tagMap[FieldName]; ok {
+			fieldName = name
+		}
+		if _, ok := tagMap[TAGTime]; ok {
+			fieldName = "time"
+		}
+		setVV, ok := row[fieldName]
+		if !ok {
+			continue
+		}
+		if _, ok := tagMap[FieldJSON]; ok {
+			if err := unmarshalJSON(ToStr(setVV), &fVal); err != nil {
+				return err
+			}
+			continue
+		}
+		if _, ok := tagMap[TAG]; ok {
+			fVal = reflect.Indirect(fVal)
+			if err := StringVal(ToStr(setVV)).Bind(&fVal); err != nil {
+				return err
+			}
+			continue
+		}
+		if _, ok := tagMap[TAGTime]; ok {
+			fVal = reflect.Indirect(fVal)
+			ns, _ := strconv.ParseInt(ToStr(row["time"]), 10, 64)
+			tm1 := time.Unix(int64(time.Duration(ns)/time.Second), int64(time.Duration(ns)%time.Second))
+			fVal.Set(reflect.ValueOf(tm1.Local()).Convert(fVal.Type()))
+			continue
+		}
+		switch val := fVal.Interface().(type) {
+		case Conversion:
+			if err := val.FromDB(StringToBytes(ToStr(setVV))); err != nil {
+				return err
+			}
+		default:
+			fVal = reflect.Indirect(fVal)
+			if err := StringVal(ToStr(setVV)).Bind(&fVal); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
